@@ -1,0 +1,297 @@
+body {
+  margin: 0;
+  font-family: 'Comfortaa', Arial, sans-serif;
+  background-color: #f7f7f7;
+  font-size: 12px;
+}
+
+.app {
+  display: flex;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* Sidebar styles */
+.ps-sidebar-root {
+  border-right: none !important;
+}
+
+.ps-sidebar-container {
+  background-color: #1a2f26 !important;
+  color: white;
+  font-family: 'Comfortaa', sans-serif;
+}
+
+.ps-menu-button {
+  padding: 10px 15px !important;
+}
+
+.ps-submenu-content {
+  background-color: #152621 !important;
+}
+
+.ps-menu-button:hover {
+  background-color: #254336 !important;
+}
+
+.ps-menu-button.ps-active {
+  background-color: #2c5244 !important;
+}
+
+/* Remove hover effect for search input */
+.search-menu-item .ps-menu-button:hover {
+  background-color: transparent !important;
+}
+
+.ps-menu-icon {
+  width: 40px !important;
+  min-width: 40px !important;
+  height: 40px !important;
+  margin-right: 10px !important;
+}
+
+.ps-menu-label {
+  font-size: 18px !important;
+}
+
+.search-input {
+  width: 90%;
+  padding: 10px;
+  margin: 10px auto;
+  border: none;
+  border-radius: 5px;
+  background-color: #254336;
+  color: white;
+  font-weight: bold;
+}
+
+.search-input::placeholder {
+  color: #a0a0a0;
+}
+
+.system-name {
+  display: flex;
+  align-items: center;
+  margin-left: 5px;
+  padding: 20px 15px;
+}
+
+.system-icon {
+  width: 50px;
+  height: 50px;
+}
+
+.system-text {
+  margin-left: 10px;
+  font-size: 30px;
+}
+
+.search-input {
+  width: 90%;
+  padding: 10px;
+  margin: 20px auto 10px;
+  border: none;
+  border-radius: 5px;
+  background-color: white;
+  color: #050C9C;
+  font-weight: bold;
+  display: block;
+}
+
+.user-section {
+  background-color: #254336;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  width: 100%;
+  font-family: 'Comfortaa', sans-serif;
+  font-size: 18px;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+  padding-left: 20px;
+  color: white;
+}
+
+.user-avatar {
+  margin-right: 10px;
+}
+
+/* Main content styles */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 0px; 
+  background-color: #6B8A7A;
+}
+
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-left: 150px;
+  margin-right: 150px;
+}
+
+.chat-window {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.message {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.message .message-content {
+  max-width: 70%;
+  padding: 10px 20px;
+  border-radius: 10px;
+  color: white;
+  font-size: 16px;
+}
+
+.message.ai .message-content {
+  background-color: #31a044;
+  margin-right: auto;
+}
+
+.message.user .message-content {
+  background-color: #43A047;
+  margin-left: auto;
+}
+
+.message-input {
+  display: flex;
+  padding: 20px;
+  background-color: #f7f7f7;
+  align-items: flex-start;
+}
+
+.message-input textarea {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 20px;
+  min-height: 40px;
+  max-height: 150px;
+  resize: vertical;
+  overflow-y: auto;
+}
+
+.message-input button {
+  padding: 10px 20px;
+  margin-left: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 20px;
+  height: 62px;
+  background: none;
+}
+
+.message-input .send-button img {
+  width: 70px; 
+  height: 70px;
+}
+
+/* Home component styles */
+.home-instruction {
+  width: calc(100% - 85px);
+  height: 400px;
+  min-height: 200px; 
+  border-radius: 5px;
+  margin-bottom: 20px;
+  font-family: 'Comfortaa', Arial, sans-serif;
+  overflow: hidden;
+}
+
+.home-instruction .MuiCardContent-root {
+  transition: background-color 0.3s ease;
+}
+
+.instruction-icon {
+  width: 30px;
+  height: auto;
+  vertical-align: middle;
+}
+
+.instruction-icon {
+  width: 30px;
+  height: auto;
+}
+
+.home-icon, .favorite-icon, .lesson-icon{
+  width: 30px;
+  height: auto;
+}
+
+.course-suggestions-section {
+  background-color: #eaebf0;
+  padding: 60px 0;
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+
+.course-suggestions-section .MuiButtonGroup-root {
+  justify-content: center;
+}
+
+.course-suggestions-section .MuiTypography-h3 {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+h2 {
+  text-align: center;
+}
+
+h3 {
+  color: #254336;
+}
+
+/* Button group styles (if still needed) */
+.tab-container {
+  display: flex;
+  justify-content: left;
+  margin-bottom: 20px;
+}
+
+.tab-icon {
+  width: 40px;
+  height: 40px;
+  margin-right: 7px;
+}
+
+.tab-content {
+  margin-top: 20px;
+}
+
+.start-learning-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.start-learning-btn img {
+  width: 80px;
+  height: auto;
+}
+
+.start-learning-btn:hover {
+  opacity: 0.8;
+}
+
