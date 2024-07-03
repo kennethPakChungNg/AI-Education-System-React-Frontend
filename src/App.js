@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
+import { WagmiConfig } from 'wagmi'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { wagmiConfig } from './walletConfig';  // Changed from 'config' to 'wagmiConfig'
 import Sidebar from './components/Sidebar';
 import ChatWindow from './components/ChatWindow';
 import MessageInput from './components/MessageInput';
 import Home from './components/Home';
 import UserProfile from './components/UserProfile';
 import './App.css';
-import { ProSidebarProvider } from 'react-pro-sidebar';
+
+// Create a client
+const queryClient = new QueryClient()
 
 function App() {
   const [messages, setMessages] = useState([
@@ -44,26 +49,28 @@ function App() {
   };
 
   return (
-    <ProSidebarProvider>
-      <div className="app">
-        <Sidebar 
-          onHomeClick={handleHomeClick} 
-          onNewCourseClick={handleNewCourseClick} 
-          onUserProfileClick={handleUserProfileClick}
-          activeComponent={activeComponent}
-        />
-        <div className="main-content">
-          {activeComponent === 'Home' && <Home onStartLearning={handleStartLearning} />}
-          {activeComponent === 'ChatWindow' && (
-            <div className="chat-container">
-              <ChatWindow messages={messages} />
-              <MessageInput onSendMessage={handleSendMessage} initialText={currentOutline} />
-            </div>
-          )}
-          {activeComponent === 'UserProfile' && <UserProfile />}
+    <WagmiConfig config={wagmiConfig}>
+      <QueryClientProvider client={queryClient}>
+        <div className="app">
+          <Sidebar 
+            onHomeClick={handleHomeClick} 
+            onNewCourseClick={handleNewCourseClick} 
+            onUserProfileClick={handleUserProfileClick}
+            activeComponent={activeComponent}
+          />
+          <div className="main-content">
+            {activeComponent === 'Home' && <Home onStartLearning={handleStartLearning} />}
+            {activeComponent === 'ChatWindow' && (
+              <div className="chat-container">
+                <ChatWindow messages={messages} />
+                <MessageInput onSendMessage={handleSendMessage} initialText={currentOutline} />
+              </div>
+            )}
+            {activeComponent === 'UserProfile' && <UserProfile />}
+          </div>
         </div>
-      </div>
-    </ProSidebarProvider>
+      </QueryClientProvider>
+    </WagmiConfig>
   );
 }
 

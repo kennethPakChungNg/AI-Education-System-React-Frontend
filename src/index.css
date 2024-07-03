@@ -72,18 +72,11 @@ body {
 .system-name {
   display: flex;
   align-items: center;
-  margin-left: 5px;
-  padding: 20px 15px;
 }
 
 .system-icon {
-  width: 50px;
-  height: 50px;
-}
-
-.system-text {
-  margin-left: 10px;
-  font-size: 30px;
+  width: 319px;
+  height: auto;
 }
 
 .search-input {
@@ -293,5 +286,16 @@ h3 {
 
 .start-learning-btn:hover {
   opacity: 0.8;
+}
+
+w3m-button {
+  --w3m-accent-color: #ffffff;
+  --w3m-accent-fill-color: #ffffff;
+  --w3m-background-color: #111111;
+  --w3m-font-family: 'Comfortaa', sans-serif;
+  --w3m-button-border-radius: 8px;
+  width: 100%;
+  margin-top: 20px;
+  margin-left: 80px;
 }
 
