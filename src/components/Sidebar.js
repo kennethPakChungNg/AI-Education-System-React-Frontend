@@ -2,13 +2,14 @@ import React from 'react';
 import { Sidebar, Menu, MenuItem, SubMenu } from 'react-pro-sidebar';
 import { useAccount } from 'wagmi';
 import learnHistoryIcon from '../assets/icons/icons8-history-64.png';
-import homeIcon from '../assets/icons/icons8-home-128.png';
-import newCourseIcon from '../assets/icons/icons8-add-64.png';
+import HomeIcon from '@mui/icons-material/Home';
+import AddIcon from '@mui/icons-material/Add';
 import lessonIcon from '../assets/icons/lesson.png';
 import aiIcon from '../assets/images/Full-Logo.png';
 import PersonIcon from '@mui/icons-material/Person';
+import suggestedCourseIcon from '../assets/icons/course.png'; 
 
-function SidebarComponent({ onHomeClick, onNewCourseClick, onUserProfileClick, activeComponent }) {
+function SidebarComponent({ onHomeClick, onNewCourseClick, onSuggestedCourseClick, onUserProfileClick, activeComponent }) {
   const { address, isConnected } = useAccount()
 
   return (
@@ -22,7 +23,7 @@ function SidebarComponent({ onHomeClick, onNewCourseClick, onUserProfileClick, a
       <hr/>
       <Menu>
         <MenuItem 
-          icon={<img src={homeIcon} alt="Home" className="home-icon" />}
+          icon={<HomeIcon style={{ color: '#ffffff', marginLeft: '1px' }} />}
           onClick={onHomeClick}
           active={activeComponent === 'Home'}
         >
@@ -38,7 +39,14 @@ function SidebarComponent({ onHomeClick, onNewCourseClick, onUserProfileClick, a
               User Profile
             </MenuItem>
             <MenuItem 
-              icon={<img src={newCourseIcon} alt="New Course" className="home-icon" />}
+              icon={<img src={suggestedCourseIcon} alt="Suggested Course" className="home-icon" />}
+              onClick={onSuggestedCourseClick}
+              active={activeComponent === 'SuggestedCourse'}
+            >
+              Suggested Course
+            </MenuItem>
+            <MenuItem 
+              icon={<AddIcon style={{ color: '#ffffff' }} />}
               onClick={onNewCourseClick}
               active={activeComponent === 'ChatWindow'}
             >

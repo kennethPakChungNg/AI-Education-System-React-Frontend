@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import CardActions from '@mui/material/CardActions';
 import Typography from '@mui/material/Typography';
-import { ButtonGroup, Button, Container} from '@mui/material';
+import { ButtonGroup, Button, Container, CircularProgress } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import blockchainIcon from '../assets/icons/blockchain_logo.png';
 import nftIcon from '../assets/icons/nft.png';
@@ -12,7 +13,7 @@ import walletIcon from '../assets/icons/crypto-wallet.png';
 import bitcoinIcon from '../assets/icons/bitcoin.png';
 import defiIcon from '../assets/icons/defi2.png';
 import smartContractIcon from '../assets/icons/smart-contracts.png';
-import newCourseIcon from '../assets/icons/icons8-add-64.png';
+import AddIcon from '@mui/icons-material/Add';
 import startLearningIcon from '../assets/icons/start_to_learn.png';
 import instructionBackground from '../assets/images/instruction_background.jpg';
 
@@ -61,265 +62,81 @@ const TabIcon = styled('img')({
 
 function Home({ onStartLearning }) {
   const [activeTab, setActiveTab] = useState('Blockchain 101');
+  const [courseOutlines, setCourseOutlines] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  const getOutlineContent = (tab) => {
-    switch (tab) {
-      case 'Blockchain 101':
-        return `
-              Blockchain 101 Course Outline:
-                1. Introduction to Blockchain
-                  i. What is blockchain?
-                  ii. Brief history and origins
-                  iii. Key features: decentralization, transparency, immutability
-                2. How Blockchain Works
-                  i. Blocks and chains explained
-                  ii. Cryptographic hash functions
-                  iii. Consensus mechanisms (e.g., Proof of Work, Proof of Stake)
-                3. Blockchain vs. Traditional Databases
-                  i. Centralized vs. decentralized systems
-                  ii. Advantages and disadvantages
-                  iii. Use cases for blockchain
-                4. Cryptocurrencies
-                  i. What are cryptocurrencies?
-                  ii. Bitcoin: The first blockchain application
-                  iii Other popular cryptocurrencies (e.g., Ethereum, Litecoin)
-                5. Smart Contracts
-                  i. Definition and purpose</li>
-                  ii. How smart contracts work</li>
-                  iii. Real-world applications</li>
-                6. Blockchain Platforms
-                  i. Ethereum</li>
-                  ii. Hyperledger</li>
-                  iii. Other notable platforms</li>
-                7. Blockchain Applications Beyond Cryptocurrency
-                  i. Supply chain management</li>
-                  ii. Healthcare</li>
-                  iii. Voting systems</li>
-                  iv. Identity management</li>
-                8. Blockchain Security
-                  i. Scalability challenges</li>
-                  ii. Interoperability between blockchains</li>
-                  iii. Potential impact on various industries</li>
-                9. The Future of Blockchain
-                  i. Scalability challenges</li>
-                  ii. Interoperability between blockchains</li>
-                  iii. Potential impact on various industries</li>
-                10. Getting Started with Blockchain
-                  i. Setting up a wallet</li>
-                  ii. Participating in a blockchain network</li>
-                  iii. Resources for further learning</li>
-                `;
-      case 'NFT':
-        return 'NFT Course Outline: [Add detailed outline here]';
-      case 'Wallet':
-        return 'Crypto Wallet Course Outline: [Add detailed outline here]';
-      case 'Cryptocurrency':
-        return 'Cryptocurrency 101 Course Outline: [Add detailed outline here]';
-      case 'DeFi':
-        return 'DeFi Course Outline: [Add detailed outline here]';
-      case 'Smart Contract Dev':
-        return 'Smart Contract Development Course Outline: [Add detailed outline here]';
-      default:
-        return '';
-    }
-  };
+  useEffect(() => {
+    const fetchCourseOutlines = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/courseOutline/suggestedCourseOutlines');
+        const outlines = response.data.data.reduce((acc, course) => {
+          acc[course.courseName] = course.courseOutline;
+          return acc;
+        }, {});
+        setCourseOutlines(outlines);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching course outlines:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchCourseOutlines();
+  }, []);
 
   const renderTabContent = () => {
-    switch (activeTab) {
-      case 'Blockchain 101':
-        return (
-          <Card sx={{ maxWidth: '100%', marginTop: 4 }} style={{backgroundColor: '#F1F8E8'}}>
-            <CardContent>
-              <Typography variant="h4" component="div" gutterBottom style={{ textAlign: 'center', fontFamily: 'Libre Baskerville Bold, sans-serif' }}>
-                Blockchain 101 Course Outline
-              </Typography>
-              <Typography variant="h6" color="text.secondary" paragraph style={{ fontFamily: 'Libre Baskerville Bold, sans-serif', padding: '5px 40px' }}>
-                Blockchain 101 covers the fundamental concepts of blockchain technology, starting from the basics and progressing to more advanced topics. It provides a well-rounded introduction for beginners, touching on both technical aspects and real-world applications.
-              </Typography>
-              <Typography variant="body1" component="div" style={{ fontFamily: 'Libre Baskerville Bold, sans-serif', padding: '0 20px' }}>
-                <ol>
-                  <li>
-                    Introduction to Blockchain
-                    <ul>
-                      <li style={{padding: '10px 0'}}>What is blockchain?</li>
-                      <li style={{padding: '10px 0'}}>Brief history and origins</li>
-                      <li style={{padding: '10px 0'}}>Key features: decentralization, transparency, immutability</li>
-                    </ul>
-                  </li>
-                  <li>
-                    How Blockchain Works
-                    <ul>
-                      <li style={{padding: '10px 0'}}>Blocks and chains explained</li>
-                      <li style={{padding: '10px 0'}}>Cryptographic hash functions</li>
-                      <li style={{padding: '10px 0'}}>Consensus mechanisms (e.g., Proof of Work, Proof of Stake)</li>
-                    </ul>
-                  </li>
-                  <li>
-                    Blockchain vs. Traditional Databases
-                    <ul>
-                      <li style={{padding: '10px 0'}}>Centralized vs. decentralized systems</li>
-                      <li style={{padding: '10px 0'}}>Advantages and disadvantages</li>
-                      <li style={{paddingTop: '10px'}}>Use cases for blockchain</li>
-                    </ul>
-                  </li>
-                  {/* Add other list items here */}
-                </ol>
-              </Typography>
-            </CardContent>
-            <CardActions style={{ width: '100%',margin: '20px 920px' }}>
-              <Button 
-                className="start-learning-btn"
-                onClick={() => onStartLearning(activeTab, getOutlineContent(activeTab))}
-                startIcon={<img src={startLearningIcon} alt="Start to learn" style={{ width: 24, height: 24 }} />}
-                variant="contained"
-                color="primary"
-                size="large"
-                style={{backgroundColor: '#6B8A7A', fontFamily: 'Libre Baskerville Bold, sans-serif'}}
-              >
-                Start Learning
-              </Button>
-            </CardActions>
-          </Card>
-        );
-      case 'NFT':
-        return (
-          <Card sx={{ maxWidth: '100%', marginTop: 4 }} style={{backgroundColor: '#F1F8E8'}}>
-            <CardContent>
-              <Typography variant="h4" component="div" gutterBottom style={{ textAlign: 'center', fontFamily: 'Libre Baskerville Bold, sans-serif' }}>
-                NFT Course Outline
-              </Typography>
-              <Typography variant="h6" color="text.secondary" paragraph style={{ fontFamily: 'Libre Baskerville Bold, sans-serif', padding: '5px 40px' }}>
-                This course provides a comprehensive introduction to Non-Fungible Tokens (NFTs), exploring their creation, use cases, and impact on digital ownership and art.
-              </Typography>
-              {/* Add more NFT course content here */}
-            </CardContent>
-            <CardActions style={{ margin: '20px 45px' }}>
-              <Button 
-                className="start-learning-btn"
-                onClick={() => onStartLearning(activeTab, getOutlineContent(activeTab))}
-                startIcon={<img src={startLearningIcon} alt="Start to learn" style={{ width: 24, height: 24 }} />}
-                variant="contained"
-                color="primary"
-                size="large"
-                style={{backgroundColor: '#6B8A7A', fontFamily: 'Libre Baskerville Bold, sans-serif'}}
-              >
-                Start Learning
-              </Button>
-            </CardActions>
-          </Card>
-        );
-      case 'Wallet':
-        return (
-          <Card sx={{ maxWidth: '100%', marginTop: 4 }} style={{backgroundColor: '#F1F8E8'}}>
-            <CardContent>
-              <Typography variant="h4" component="div" gutterBottom style={{ textAlign: 'center', fontFamily: 'Libre Baskerville Bold, sans-serif' }}>
-                Crypto Wallet Course Outline
-              </Typography>
-              <Typography variant="h6" color="text.secondary" paragraph style={{ fontFamily: 'Libre Baskerville Bold, sans-serif', padding: '5px 40px' }}>
-                Learn about cryptocurrency wallets, their types, security features, and best practices for managing your digital assets.
-              </Typography>
-              {/* Add more Wallet course content here */}
-            </CardContent>
-            <CardActions style={{ margin: '20px 45px' }}>
-              <Button 
-                className="start-learning-btn"
-                onClick={() => onStartLearning(activeTab, getOutlineContent(activeTab))}
-                startIcon={<img src={startLearningIcon} alt="Start to learn" style={{ width: 24, height: 24 }} />}
-                variant="contained"
-                color="primary"
-                size="large"
-                style={{backgroundColor: '#6B8A7A', fontFamily: 'Libre Baskerville Bold, sans-serif'}}
-              >
-                Start Learning
-              </Button>
-            </CardActions>
-          </Card>
-        );
-      case 'Cryptocurrency':
-        return (
-          <Card sx={{ maxWidth: '100%', marginTop: 4 }} style={{backgroundColor: '#F1F8E8'}}>
-            <CardContent>
-              <Typography variant="h4" component="div" gutterBottom style={{ textAlign: 'center', fontFamily: 'Libre Baskerville Bold, sans-serif' }}>
-                Cryptocurrency 101 Course Outline
-              </Typography>
-              <Typography variant="h6" color="text.secondary" paragraph style={{ fontFamily: 'Libre Baskerville Bold, sans-serif', padding: '5px 40px' }}>
-                Dive into the world of cryptocurrencies, understanding their underlying technology, market dynamics, and potential future impacts.
-              </Typography>
-              {/* Add more Cryptocurrency course content here */}
-            </CardContent>
-            <CardActions style={{ margin: '20px 45px' }}>
-              <Button 
-                className="start-learning-btn"
-                onClick={() => onStartLearning(activeTab, getOutlineContent(activeTab))}
-                startIcon={<img src={startLearningIcon} alt="Start to learn" style={{ width: 24, height: 24 }} />}
-                variant="contained"
-                color="primary"
-                size="large"
-                style={{backgroundColor: '#6B8A7A', fontFamily: 'Libre Baskerville Bold, sans-serif'}}
-              >
-                Start Learning
-              </Button>
-            </CardActions>
-          </Card>
-        );
-      case 'DeFi':
-        return (
-          <Card sx={{ maxWidth: '100%', marginTop: 4 }} style={{backgroundColor: '#F1F8E8'}}>
-            <CardContent>
-              <Typography variant="h4" component="div" gutterBottom style={{ textAlign: 'center', fontFamily: 'Libre Baskerville Bold, sans-serif' }}>
-                DeFi Course Outline
-              </Typography>
-              <Typography variant="h6" color="text.secondary" paragraph style={{ fontFamily: 'Libre Baskerville Bold, sans-serif', padding: '5px 40px' }}>
-                Explore Decentralized Finance (DeFi), its protocols, applications, and how it's reshaping traditional financial systems.
-              </Typography>
-              {/* Add more DeFi course content here */}
-            </CardContent>
-            <CardActions style={{ margin: '20px 45px' }}>
-              <Button 
-                className="start-learning-btn"
-                onClick={() => onStartLearning(activeTab, getOutlineContent(activeTab))}
-                startIcon={<img src={startLearningIcon} alt="Start to learn" style={{ width: 24, height: 24 }} />}
-                variant="contained"
-                color="primary"
-                size="large"
-                style={{backgroundColor: '#6B8A7A', fontFamily: 'Libre Baskerville Bold, sans-serif'}}
-              >
-                Start Learning
-              </Button>
-            </CardActions>
-          </Card>
-        );
-      case 'Smart Contract Dev':
-        return (
-          <Card sx={{ maxWidth: '100%', marginTop: 4 }} style={{backgroundColor: '#F1F8E8'}}>
-            <CardContent>
-              <Typography variant="h4" component="div" gutterBottom style={{ textAlign: 'center', fontFamily: 'Libre Baskerville Bold, sans-serif' }}>
-                Smart Contract Development Course Outline
-              </Typography>
-              <Typography variant="h6" color="text.secondary" paragraph style={{ fontFamily: 'Libre Baskerville Bold, sans-serif', padding: '5px 40px' }}>
-                Learn to develop, deploy, and interact with smart contracts on blockchain platforms, with a focus on Ethereum and Solidity.
-              </Typography>
-              {/* Add more Smart Contract Development course content here */}
-            </CardContent>
-            <CardActions style={{ margin: '20px 45px' }}>
-              <Button 
-                className="start-learning-btn"
-                onClick={() => onStartLearning(activeTab, getOutlineContent(activeTab))}
-                startIcon={<img src={startLearningIcon} alt="Start to learn" style={{ width: 24, height: 24 }} />}
-                variant="contained"
-                color="primary"
-                size="large"
-                style={{backgroundColor: '#6B8A7A', fontFamily: 'Libre Baskerville Bold, sans-serif'}}
-              >
-                Start Learning
-              </Button>
-            </CardActions>
-          </Card>
-        );
-      default:
-        return null;
+    if (loading) {
+      return <CircularProgress />;
     }
+
+    const outlineContent = courseOutlines[activeTab];
+    if (!outlineContent) {
+      return <Typography>No course outline available</Typography>;
+    }
+
+    return (
+      <Card sx={{ maxWidth: '100%', marginTop: 4 }} style={{backgroundColor: '#F1F8E8'}}>
+        <CardContent>
+          <Typography variant="h4" component="div" gutterBottom style={{ textAlign: 'center', fontFamily: 'Libre Baskerville Bold, sans-serif' }}>
+            {activeTab} Course Outline
+          </Typography>
+          <Typography variant="h6" color="text.secondary" paragraph style={{ fontFamily: 'Libre Baskerville Bold, sans-serif', padding: '5px 40px' }}>
+            This course provides a comprehensive introduction to {activeTab}, exploring its key concepts, applications, and impact on the blockchain and cryptocurrency ecosystem.
+          </Typography>
+          <Typography variant="body1" component="div" style={{ fontFamily: 'Libre Baskerville Bold, sans-serif', padding: '0 20px' }}>
+            <ol>
+              {Object.entries(outlineContent).map(([title, subtitles], index) => (
+                <li key={index}>
+                  {title}
+                  <ul>
+                    {Object.entries(subtitles).map(([subtitle, description], subIndex) => (
+                      <li key={`${index}-${subIndex}`} style={{padding: '10px 0'}}>
+                        {subtitle}: {description}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ol>
+          </Typography>
+        </CardContent>
+        <CardActions style={{ width: '100%', margin: '20px 920px' }}>
+          <Button 
+            className="start-learning-btn"
+            onClick={() => onStartLearning(activeTab, JSON.stringify(outlineContent))}
+            startIcon={<img src={startLearningIcon} alt="Start to learn" style={{ width: 24, height: 24 }} />}
+            variant="contained"
+            color="primary"
+            size="large"
+            style={{backgroundColor: '#6B8A7A', fontFamily: 'Libre Baskerville Bold, sans-serif'}}
+          >
+            Start Learning
+          </Button>
+        </CardActions>
+      </Card>
+    );
   };
+  
   
 
   const tabs = [
@@ -336,7 +153,7 @@ function Home({ onStartLearning }) {
       <Card sx={{ maxWidth: 1350, position: 'relative', margin: '50px 120px' }} className="home-instruction">
         <CardMedia
           component="img"
-          height="400"  // Adjust this value as needed
+          height="400"
           image={instructionBackground}
           alt="Background Img"
         />
@@ -357,12 +174,15 @@ function Home({ onStartLearning }) {
           <Typography variant="h3" sx={{ fontFamily: 'Libre Baskerville Bold, sans-serif', fontSize: '42px' }}>
             Speed Your Learning By AI
           </Typography>
-          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', marginTop: 2 , fontFamily: 'Libre Baskerville, sans-serif', paddingTop: '30px'}}>
-            Choose the pre-defined course below to begin OR
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', marginTop: 2 , fontFamily: 'Libre Baskerville, sans-serif', paddingTop: '30px', marginLeft: '3px'}}>
+            Choose the pre-defined course below to begin
           </Typography>
-          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', marginTop: 2 , fontFamily: 'Libre Baskerville, sans-serif', paddingTop: '30px'}}>
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', marginTop: 2 , fontFamily: 'Libre Baskerville, sans-serif', fontWeight: 'bold', paddingTop: '10px', marginLeft: '200px'}}>
+            OR
+          </Typography>
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', marginTop: 2, fontFamily: 'Libre Baskerville, sans-serif', paddingTop: '10px', marginLeft: '3px'}}>
             Press 
-            <img src={newCourseIcon} alt="New Course" className="instruction-icon" style={{ marginLeft: '5px', marginRight: '5px' }} />
+            <AddIcon sx={{ marginLeft: '5px', marginRight: '5px', color: '#152621' }} />
             in sidebar to create your new course.
           </Typography>
         </CardContent>

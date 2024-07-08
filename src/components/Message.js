@@ -1,7 +1,7 @@
 import React from 'react';
 import { Paper, Typography, Box } from '@mui/material';
 
-function Message({ text, sender }) {
+function Message({ text, sender, style }) {
   const backgroundColor = sender === 'user' ? '#3AA6B9' : '#6B8A7A';
   const fontColor = sender === 'user' ? '#FFD0D0' : '#ffffff';
   const fontFamily = sender === 'user' ? 'Libre Baskerville' : 'Libre Baskerville';
@@ -25,7 +25,7 @@ function Message({ text, sender }) {
           color: fontColor,
         }}
       >
-        <Typography variant="body1" style={{fontFamily: fontFamily, fontSize: '16px'}}>{text}</Typography>
+        <Typography variant="body1" style={{...style, fontFamily: fontFamily, fontSize: '16px'}}>{text}</Typography>
       </Paper>
     </Box>
   );
