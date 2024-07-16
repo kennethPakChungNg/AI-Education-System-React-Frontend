@@ -299,3 +299,15 @@ w3m-button {
   margin-left: 80px;
 }
 
+.ai-response-title {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.ai-response-title + p {
+  margin-top: 0;
+}
+
+p {
+  margin-bottom: 1em;
+}

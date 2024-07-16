@@ -1,16 +1,46 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Sidebar, Menu, MenuItem, SubMenu } from 'react-pro-sidebar';
 import { useAccount } from 'wagmi';
+import axios from 'axios';
 import learnHistoryIcon from '../assets/icons/icons8-history-64.png';
 import HomeIcon from '@mui/icons-material/Home';
 import AddIcon from '@mui/icons-material/Add';
-import lessonIcon from '../assets/icons/lesson.png';
+import LocalLibraryIcon from '@mui/icons-material/LocalLibrary';
 import aiIcon from '../assets/images/Full-Logo.png';
 import PersonIcon from '@mui/icons-material/Person';
 import suggestedCourseIcon from '../assets/icons/course.png'; 
 
-function SidebarComponent({ onHomeClick, onNewCourseClick, onSuggestedCourseClick, onUserProfileClick, activeComponent }) {
-  const { address, isConnected } = useAccount()
+const SidebarComponent = forwardRef(({ onHomeClick, onNewCourseClick, onSuggestedCourseClick, onUserProfileClick, activeComponent, onCourseHistoryClick }, ref) => {
+  const [courseHistory, setCourseHistory] = useState([]);
+  const { address, isConnected } = useAccount();
+
+  const fetchCourseHistory = useCallback(async () => {
+    if (!address) return;
+    console.log('Fetching course history for address:', address);
+    try {
+      const response = await axios.post('http://localhost:5000/courseOutline/queryCourseOutline', {
+        WalletAddress: address,
+        requiredField: ['courseId', 'courseName']
+      });
+      console.log('Course history response:', response.data);
+      
+      if (response.data && response.data.data) {
+        setCourseHistory(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching course history:', error);
+    }
+  }, [address]);
+
+  useEffect(() => {
+    if (isConnected) {
+      fetchCourseHistory();
+    }
+  }, [isConnected, fetchCourseHistory]);
+
+  useImperativeHandle(ref, () => ({
+    fetchCourseHistory
+  }));
 
   return (
     <Sidebar
@@ -60,12 +90,18 @@ function SidebarComponent({ onHomeClick, onNewCourseClick, onSuggestedCourseClic
               label="Course History"
               icon={<img src={learnHistoryIcon} alt="History" className="favorite-icon" />}
             >
-              <MenuItem icon={<img src={lessonIcon} alt="Lesson" className="lesson-icon" />}>
-                Blockchain Foundation
-              </MenuItem>
-              <MenuItem icon={<img src={lessonIcon} alt="Lesson" className="lesson-icon" />}>
-                Crypto Currency 101
-              </MenuItem>
+              {courseHistory.map((course, index) => (
+                <MenuItem 
+                  key={index} 
+                  icon={<LocalLibraryIcon alt="Lesson" className="lesson-icon" />}
+                  onClick={() => {
+                    console.log('Course clicked:', course.courseId);
+                    onCourseHistoryClick(course.courseId);
+                  }}
+                >
+                  {course.courseName}
+                </MenuItem>
+              ))}
             </SubMenu>
           </>
         )}
@@ -82,6 +118,6 @@ function SidebarComponent({ onHomeClick, onNewCourseClick, onSuggestedCourseClic
       </div>
     </Sidebar>
   );
-}
+});
 
 export default SidebarComponent;

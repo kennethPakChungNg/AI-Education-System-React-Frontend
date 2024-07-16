@@ -25,7 +25,16 @@ function Message({ text, sender, style }) {
           color: fontColor,
         }}
       >
-        <Typography variant="body1" style={{...style, fontFamily: fontFamily, fontSize: '16px'}}>{text}</Typography>
+        <Typography 
+          variant="body1" 
+          style={{
+            ...style, 
+            fontFamily: fontFamily, 
+            fontSize: '16px',
+            color: sender === 'ai' ? '#1a2f26' : fontColor
+          }}
+          dangerouslySetInnerHTML={{ __html: text }}
+        />
       </Paper>
     </Box>
   );

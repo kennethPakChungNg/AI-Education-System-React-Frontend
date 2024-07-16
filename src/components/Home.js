@@ -62,25 +62,27 @@ const TabIcon = styled('img')({
 
 function Home({ onStartLearning }) {
   const [activeTab, setActiveTab] = useState('Blockchain 101');
-  const [courseOutlines, setCourseOutlines] = useState({});
+  const [courseOutlines, setCourseOutlines] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchCourseOutlines = async () => {
       try {
         const response = await axios.get('http://localhost:5000/courseOutline/suggestedCourseOutlines');
-        const outlines = response.data.data.reduce((acc, course) => {
-          acc[course.courseName] = course.courseOutline;
-          return acc;
-        }, {});
-        setCourseOutlines(outlines);
-        setLoading(false);
+        if (response.data && response.data.data) {
+          setCourseOutlines(response.data.data);
+        } else {
+          console.error('Unexpected response format:', response.data);
+          setCourseOutlines([]);
+        }
       } catch (error) {
         console.error('Error fetching course outlines:', error);
+        setCourseOutlines([]);
+      } finally {
         setLoading(false);
       }
     };
-
+  
     fetchCourseOutlines();
   }, []);
 
@@ -88,12 +90,14 @@ function Home({ onStartLearning }) {
     if (loading) {
       return <CircularProgress />;
     }
-
-    const outlineContent = courseOutlines[activeTab];
-    if (!outlineContent) {
-      return <Typography>No course outline available</Typography>;
+  
+    const course = courseOutlines.find(course => course.courseName === activeTab);
+    if (!course || !course.courseOutline) {
+      return <Typography>No course outline available for {activeTab}</Typography>;
     }
-
+  
+    const outlineContent = course.courseOutline;
+  
     return (
       <Card sx={{ maxWidth: '100%', marginTop: 4 }} style={{backgroundColor: '#F1F8E8'}}>
         <CardContent>
@@ -104,26 +108,35 @@ function Home({ onStartLearning }) {
             This course provides a comprehensive introduction to {activeTab}, exploring its key concepts, applications, and impact on the blockchain and cryptocurrency ecosystem.
           </Typography>
           <Typography variant="body1" component="div" style={{ fontFamily: 'Libre Baskerville Bold, sans-serif', padding: '0 20px' }}>
-            <ol>
-              {Object.entries(outlineContent).map(([title, subtitles], index) => (
-                <li key={index}>
-                  {title}
-                  <ul>
-                    {Object.entries(subtitles).map(([subtitle, description], subIndex) => (
-                      <li key={`${index}-${subIndex}`} style={{padding: '10px 0'}}>
-                        {subtitle}: {description}
-                      </li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ol>
+            {outlineContent && Object.entries(outlineContent).length > 0 ? (
+              <ol>
+                {Object.entries(outlineContent).map(([topicKey, topicValue]) => (
+                  <li key={topicKey}>
+                    {topicValue.topic}
+                    {topicValue.details && topicValue.details.length > 0 && (
+                      <ul>
+                        {topicValue.details.map((detail, detailIndex) => {
+                          const subtopicKey = Object.keys(detail)[0];
+                          return (
+                            <li key={`${topicKey}-${detailIndex}`} style={{padding: '10px 0'}}>
+                              {subtopicKey}: {detail[subtopicKey]}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <Typography>No detailed outline available for this course.</Typography>
+            )}
           </Typography>
         </CardContent>
         <CardActions style={{ width: '100%', margin: '20px 920px' }}>
           <Button 
             className="start-learning-btn"
-            onClick={() => onStartLearning(activeTab, JSON.stringify(outlineContent))}
+            onClick={() => onStartLearning(activeTab, outlineContent)}
             startIcon={<img src={startLearningIcon} alt="Start to learn" style={{ width: 24, height: 24 }} />}
             variant="contained"
             color="primary"
@@ -136,8 +149,6 @@ function Home({ onStartLearning }) {
       </Card>
     );
   };
-  
-  
 
   const tabs = [
     { name: 'Blockchain 101', icon: blockchainIcon },
