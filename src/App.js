@@ -50,6 +50,30 @@ function AppContent() {
     return formattedSections.join('\n\n');
   };
 
+  //handle renaming course in course outline collection (have wallet address)
+  const handleCourseRename = async (courseId, newName) => {
+    try {
+      await axios.post('http://localhost:5000/courseOutline/updateCourseName', {
+        WalletAddress: address,
+        CourseId: courseId,
+        CourseName: newName
+      });
+      if (sidebarRef.current && sidebarRef.current.fetchCourseHistory) {
+        sidebarRef.current.fetchCourseHistory();
+      }
+      // If the renamed course is currently active, update its title
+      if (suggestedCourseInfo && suggestedCourseInfo.courseId === courseId) {
+        setSuggestedCourseInfo(prevInfo => ({
+          ...prevInfo,
+          title: newName
+        }));
+      }
+    } catch (error) {
+      console.error('Error renaming course:', error);
+    }
+  };
+
+
   const handleSendMessage = (text) => {
     const newMessage = {
       id: messages.length + 1,
@@ -77,12 +101,28 @@ function AppContent() {
     setActiveComponent('SuggestedCourse');
   };
 
-  const handleStartLearning = (courseName, courseOutline) => {
-    setSuggestedCourseInfo({ 
-      title: courseName, 
-      outline: courseOutline
-    });
-    setActiveComponent('SuggestedCourse');
+  const handleStartLearning = async (courseName, courseOutline) => {
+    try {
+      const response = await axios.post('http://localhost:5000/courseOutline/saveCourseOutline', {
+        WalletAddress: address,
+        courseName: courseName,
+        courseOutline: courseOutline
+      });
+  
+      if (response.data && response.data.data && response.data.data.courseId) {
+        setSuggestedCourseInfo({ 
+          title: courseName, 
+          outline: courseOutline,
+          courseId: response.data.data.courseId
+        });
+        setActiveComponent('SuggestedCourse');
+        if (sidebarRef.current && sidebarRef.current.fetchCourseHistory) {
+          sidebarRef.current.fetchCourseHistory();
+        }
+      }
+    } catch (error) {
+      console.error('Error saving course:', error);
+    }
   };
 
   /*const addCourseToHistory = async (course, outline) => {
@@ -170,6 +210,7 @@ function AppContent() {
         onSuggestedCourseClick={handleSuggestedCourseClick}
         onUserProfileClick={handleUserProfileClick}
         onCourseHistoryClick={handleCourseHistoryClick}
+        onCourseRename={handleCourseRename}
         activeComponent={activeComponent}
       />
       <div className="main-content">

@@ -1,10 +1,37 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
-    Box, Typography, List, ListItem, ListItemIcon, ListItemText, Checkbox, Button, TextField, LinearProgress, Dialog, DialogTitle, DialogContent, DialogActions, Radio, RadioGroup, FormControlLabel 
+    Box, Typography, List, ListItem, ListItemIcon, ListItemText, Checkbox, Button, TextField, LinearProgress, Dialog, DialogTitle, DialogContent, DialogActions, Radio, RadioGroup, FormControlLabel, CircularProgress 
 } from '@mui/material';
+import { styled } from '@mui/material/styles';
 import axios from 'axios';
 import ChatWindow from './ChatWindow';
 import MessageInput from './MessageInput';
+
+const LoadingIndicator = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  padding: theme.spacing(2),
+  color: '#ffffff',
+  backgroundColor: '#1a2f26',
+}));
+
+const StyledDialog = styled(Dialog)(({ theme }) => ({
+  '& .MuiDialog-paper': {
+    backgroundColor: '#3A4D39',
+    color: '#ffffff',
+  },
+}));
+
+const StyledDialogContent = styled(DialogContent)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  padding: theme.spacing(3),
+}));
+
+const StyledCircularProgress = styled(CircularProgress)({
+  color: '#6B8A7A',
+});
 
 function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessages = [], walletAddress, courseId }) {
     const [messages, setMessages] = useState(initialMessages.length > 0 ? initialMessages : [
@@ -22,6 +49,9 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
     const [quizOpen, setQuizOpen] = useState(false);
     const [quizAnswers, setQuizAnswers] = useState({});
     const [quizResults, setQuizResults] = useState(null);
+    const [isAIResponding, setIsAIResponding] = useState(false);
+    const [isQuizGenerating, setIsQuizGenerating] = useState(false);
+    const [isCalculatingResults, setIsCalculatingResults] = useState(false);
 
     const formatCourseOutline = (rawOutline) => {
         if (!rawOutline) return {};
@@ -62,8 +92,20 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
           if (courseId) {
             currentOutline = await loadExistingCourse(courseId);
           } else {
-            const formattedOutline = formatCourseOutline(initialCourseOutline);
+            //const formattedOutline = formatCourseOutline(initialCourseOutline);
+            const formattedOutline = Object.entries(initialCourseOutline).reduce((acc, [topicKey, topicValue]) => {
+              acc[topicKey] = {
+                ...topicValue,
+                details: topicValue.details.map(detail => ({
+                  ...detail,
+                  isCompleted: false
+                }))
+              };
+              return acc;
+            }, {});
+
             console.log('Formatted outline:', formattedOutline);
+
             const response = await axios.post('http://localhost:5000/courseOutline/saveCourseOutline', {
               WalletAddress: walletAddress,
               courseName: courseTitle,
@@ -185,7 +227,9 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
       
           await saveConversation('user', text, currentOutline.courseId, topicId, subTopicId);
       
+          setIsAIResponding(true);
           const response = await axios.post('http://localhost:5000/aiGen/answerUserQuestion', requestData);
+          setIsAIResponding(false);
       
           console.log('AI response:', response.data);
       
@@ -199,11 +243,13 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
           await saveConversation('system', response.data.data, currentOutline.courseId, topicId, subTopicId);
         } catch (error) {
           console.error('Error in conversation:', error);
+          setIsAIResponding(false);
         }
     };
 
 
     const handleQuizSubmit = async () => {
+        setIsCalculatingResults(true);
         try {
           console.log("Trigger handleQuizSubmit method.");
           console.log("Current quizData:", quizData);
@@ -238,6 +284,8 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
           if (error.response) {
             console.error('Error response from server:', error.response.data);
           }
+        } finally {
+          setIsCalculatingResults(false);
         }
     };
 
@@ -255,29 +303,33 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
 
     //Handle user checkbox change
     const handleCheckboxChange = async (topicKey, subtopicKey) => {
+      try {
+        console.log("trigger handleCheckboxChange method.");
         const updatedOutline = {...outline};
         const subtopicIndex = updatedOutline.courseOutline[topicKey].details.findIndex(detail => Object.keys(detail)[0] === subtopicKey);
         if (subtopicIndex !== -1) {
-            updatedOutline.courseOutline[topicKey].details[subtopicIndex].completed = !updatedOutline.courseOutline[topicKey].details[subtopicIndex].completed;
+          const newCompletionStatus = !updatedOutline.courseOutline[topicKey].details[subtopicIndex].isCompleted;
+          updatedOutline.courseOutline[topicKey].details[subtopicIndex].isCompleted = newCompletionStatus;
+          setOutline(updatedOutline);
+
+          const totalSubtopics = Object.values(updatedOutline.courseOutline).reduce((acc, topic) => acc + topic.details.length, 0);
+          const completedSubtopics = Object.values(updatedOutline.courseOutline).reduce((acc, topic) => 
+            acc + topic.details.filter(subtopic => subtopic.isCompleted).length, 0);
+          setProgress((completedSubtopics / totalSubtopics) * 100);
+
+          console.log('Updated outline for isCompleted:', updatedOutline);
+
+          await axios.post('http://localhost:5000/courseOutline/updateLearningStatus', {
+            WalletAddress: walletAddress,
+            CourseId: outline.courseId,
+            TopicId: topicKey,
+            SubTopicId: subtopicKey,
+            isCompleted: newCompletionStatus
+          });
         }
-        setOutline(updatedOutline);
-    
-        const totalSubtopics = Object.values(outline.courseOutline).reduce((acc, topic) => acc + topic.details.length, 0);
-        const completedSubtopics = Object.values(updatedOutline.courseOutline).reduce((acc, topic) => 
-            acc + topic.details.filter(subtopic => subtopic.completed).length, 0);
-        setProgress((completedSubtopics / totalSubtopics) * 100);
-    
-        try {
-            await axios.post('http://localhost:5000/courseOutline/updateSubtopicCompletion', {
-                WalletAddress: walletAddress,
-                CourseId: outline.courseId,
-                TopicId: topicKey,
-                SubTopicId: subtopicKey,
-                Completed: updatedOutline.courseOutline[topicKey].details[subtopicIndex].completed
-            });
-        } catch (error) {
-            console.error('Error updating subtopic completion:', error);
-        }
+      } catch (error) {
+        console.error('Error updating subtopic completion:', error);
+      }
     };
 
     //conversation saving function
@@ -301,6 +353,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
     //handle quiz click
     const handleQuizClick = async (topicKey, subtopicKey) => {
         setQuizAnswers({});
+        setIsQuizGenerating(true);
         try {
           const response = await axios.post('http://localhost:5000/aiGen/generateQuiz', {
             WalletAddress: walletAddress,
@@ -319,6 +372,8 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
           }
         } catch (error) {
           console.error('Error generating quiz:', error);
+        } finally {
+          setIsQuizGenerating(false);
         }
     };
 
@@ -442,16 +497,26 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
         <Box display="flex" height="100vh">
             <Box flex={1} overflow="auto" display="flex" flexDirection="column">
                 <ChatWindow messages={messages} />
+                {isAIResponding && (
+                    <Box display="flex" justifyContent="center" alignItems="center" p={2}>
+                        {isAIResponding && (
+                        <LoadingIndicator>
+                            <StyledCircularProgress size={20} />
+                            <Typography ml={2}>AI is thinking...</Typography>
+                        </LoadingIndicator>
+                        )}
+                    </Box>
+                )}
                 {started ? (
-                <MessageInput onSendMessage={(text) => handleSendMessage(text)} />
+                    <MessageInput onSendMessage={(text) => handleSendMessage(text)} />
                 ) : (
-                <Button 
-                    onClick={handleStartLearning}
-                    variant="contained"
-                    sx={{ alignSelf: 'center', mt: 2, mb: 2 }}
-                >
-                    Start to learn
-                </Button>
+                    <Button 
+                        onClick={handleStartLearning}
+                        variant="contained"
+                        sx={{ alignSelf: 'center', mt: 2, mb: 2 }}
+                    >
+                        Start to learn
+                    </Button>
                 )}
             </Box>
             <Box width={400} bgcolor="#1a2f26" color="#ffffff" p={2} overflow="auto">
@@ -498,17 +563,17 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
                                         return (
                                             <ListItem key={subtopicKey} sx={{ pl: 4 }}>
                                                 <ListItemIcon>
-                                                    <Checkbox
-                                                        edge="start"
-                                                        checked={subtopic.completed || false}
-                                                        onChange={() => handleCheckboxChange(topicKey, subtopicKey)}
-                                                        sx={{
-                                                            color: '#ffffff',
-                                                            '&.Mui-checked': {
-                                                            color: '#ffffff',
-                                                            }
-                                                        }}
-                                                    />
+                                                <Checkbox
+                                                  edge="start"
+                                                  checked={subtopic.isCompleted || false}
+                                                  onChange={() => handleCheckboxChange(topicKey, subtopicKey)}
+                                                  sx={{
+                                                    color: '#ffffff',
+                                                    '&.Mui-checked': {
+                                                      color: '#ffffff',
+                                                    }
+                                                  }}
+                                                />
                                                 </ListItemIcon>
                                                 <ListItemText 
                                                     primary={subtopicKey} 
@@ -566,6 +631,18 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
                     <Button onClick={handleDialogConfirm}>Yes</Button>
                 </DialogActions>
             </Dialog>
+            <StyledDialog open={isQuizGenerating}>
+                <StyledDialogContent>
+                    <StyledCircularProgress size={20} />
+                    <Typography ml={2}>Generating quiz...</Typography>
+                </StyledDialogContent>
+            </StyledDialog>
+            <StyledDialog open={isCalculatingResults}>
+                <StyledDialogContent>
+                    <StyledCircularProgress size={20} />
+                    <Typography ml={2}>Calculating results...</Typography>
+                </StyledDialogContent>
+            </StyledDialog>
             {renderQuizDialog()}
             {renderQuizResults()}
         </Box>
