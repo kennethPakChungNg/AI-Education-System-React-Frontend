@@ -149,36 +149,61 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
 
       
     const loadExistingCourse = useCallback(async (courseId) => {
-        try {
-            const response = await axios.post('http://localhost:5000/courseOutline/queryCourseOutline', {
-                WalletAddress: walletAddress,
-                courseId: courseId
-            });
-            if (response.data && response.data.data && response.data.data[0]) {
-                const savedOutline = response.data.data[0];
-                setOutline(savedOutline);
-                setStarted(true);
-                return savedOutline;
-            }
-        } catch (error) {
-            console.error('Error loading existing course:', error);
+      try {
+        const [outlineResponse, conversationResponse] = await Promise.all([
+          axios.post('http://localhost:5000/courseOutline/queryCourseOutline', {
+            WalletAddress: walletAddress,
+            courseId: courseId
+          }),
+          axios.post('http://localhost:5000/conversation/queryEduConversation', {
+            WalletAddress: walletAddress,
+            CourseId: courseId,
+            TopicId: 'A',
+            SubTopicId: 'A.1'
+          })
+        ]);
+    
+        if (outlineResponse.data && outlineResponse.data.data && outlineResponse.data.data[0]) {
+          const savedOutline = outlineResponse.data.data[0];
+          setOutline(savedOutline);
+          setStarted(true);
+    
+          if (conversationResponse.data && conversationResponse.data.data) {
+            const formattedMessages = conversationResponse.data.data.map(conv => ({
+              id: conv._id,
+              text: conv.Role === 'system' ? formatAIResponse(conv.Message) : conv.Message,
+              sender: conv.Role === 'system' ? 'ai' : 'user'
+            }));
+            setMessages(formattedMessages);
+          } else {
+            setMessages([
+              { id: 1, text: `Welcome to ${savedOutline.courseName} course!`, sender: 'ai' },
+              { id: 2, text: "I'll be your AI teacher for this course. Let's begin with the course outline.", sender: 'ai' },
+              { id: 3, text: 'I will personalize the teaching style according to your saved user profile. Do you want to start?', sender: 'ai' },
+            ]);
+          }
+    
+          return savedOutline;
         }
+      } catch (error) {
+        console.error('Error loading existing course:', error);
+      }
     }, [walletAddress]);
 
 
     useEffect(() => {
-        if (courseId) {
-            loadExistingCourse(courseId);
-        } else {
-            // Reset the state for a new course
-            setOutline({});
-            setStarted(false);
-            setMessages([
-                { id: 1, text: `Welcome to ${courseTitle} course!`, sender: 'ai' },
-                { id: 2, text: "I'll be your AI teacher for this course. Let's begin with the course outline.", sender: 'ai' },
-                { id: 3, text: 'I will personalize the teaching style according to your saved user profile. Do you want to start?', sender: 'ai' },
-            ]);
-        }
+      if (courseId) {
+        loadExistingCourse(courseId);
+      } else {
+        // Reset state for a new course
+        setOutline({});
+        setStarted(false);
+        setMessages([
+          { id: 1, text: `Welcome to ${courseTitle} course!`, sender: 'ai' },
+          { id: 2, text: "I'll be your AI teacher for this course. Let's begin with the course outline.", sender: 'ai' },
+          { id: 3, text: 'I will personalize the teaching style according to your saved user profile. Do you want to start?', sender: 'ai' },
+        ]);
+      }
     }, [courseId, loadExistingCourse, courseTitle]);
 
 
