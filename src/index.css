@@ -97,18 +97,22 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 80px;
+  padding: 16px;
   width: 100%;
-  font-family: 'Comfortaa', sans-serif;
-  font-size: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .user {
   display: flex;
   align-items: center;
-  margin-top: 20px;
-  padding-left: 20px;
+  justify-content: center;
+  margin-bottom: 10px;
   color: white;
+  width: 100%;
 }
 
 .user-avatar {
@@ -228,6 +232,11 @@ body {
   height: auto;
 }
 
+.lesson-icon {
+  margin-right: 15px;
+  margin-bottom: 4px;
+}
+
 .course-suggestions-section {
   background-color: #eaebf0;
   padding: 60px 0;
@@ -295,8 +304,7 @@ w3m-button {
   --w3m-font-family: 'Comfortaa', sans-serif;
   --w3m-button-border-radius: 8px;
   width: 100%;
-  margin-top: 20px;
-  margin-left: 80px;
+  margin-top: 10px;
 }
 
 .ai-response-title {
@@ -310,4 +318,74 @@ w3m-button {
 
 p {
   margin-bottom: 1em;
+}
+
+.course-history-item {
+  padding: 4px 16px !important;
+  width: 100%;
+}
+
+.renaming-course, .course-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.rename-input {
+  flex: 1;
+  min-width: 0;
+  margin-right: 8px;
+  padding: 5px;
+}
+
+.rename-buttons {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.rename-button {
+  background-color: #9EB384 !important;
+  color: white !important;
+  margin-left: 5px !important;
+  min-width: auto !important;
+  padding: 2px 5px !important;
+  font-size: 12px !important;
+}
+
+.course-name {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  flex: 1;
+  min-width: 0;
+  margin-right: 8px;
+}
+
+.course-name span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rename-trigger {
+  background-color: #9EB384 !important;
+  color: white !important;
+  min-width: 24px !important;
+  padding: 2px 4px !important;
+  flex-shrink: 0;
+  font-size: 12px !important;
+}
+
+.ps-menu-button {
+  padding: 8px 12px !important;
+}
+
+.ps-submenu-content {
+  background-color: #152621 !important;
+  padding: 0 !important;
+}
+
+.ps-submenu-content .ps-menu-button {
+  padding-left: 24px !important;
 }
