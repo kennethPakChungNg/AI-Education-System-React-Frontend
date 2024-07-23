@@ -18,6 +18,7 @@ import {
   Alert,
 } from '@mui/material';
 
+import { backendBaseUrl } from '../serverConfig';
 
 const theme = createTheme({
     palette: {
@@ -87,7 +88,7 @@ function UserProfile() {
 
   const fetchUserProfile = async (walletAddress) => {
     try {
-      const response = await axios.post('http://localhost:5000/userInfo/queryUserBackgroundByAddress', { WalletAddress: walletAddress });
+      const response = await axios.post(`${backendBaseUrl}/userInfo/queryUserBackgroundByAddress`, { WalletAddress: walletAddress });
       console.log('Fetched user data:', response.data);
       if (response.data && response.data.data && response.data.data.length > 0) {
         const userData = response.data.data[0];
@@ -125,7 +126,7 @@ function UserProfile() {
 
   const fetchSubject = async (walletAddress) => {
     try {
-      const response = await axios.post('http://localhost:5000/userInfo/queryUserBackgroundByAddress', { WalletAddress: walletAddress });
+      const response = await axios.post(`${backendBaseUrl}/userInfo/queryUserBackgroundByAddress`, { WalletAddress: walletAddress });
       if (response.data && response.data.data && response.data.data.length > 0) {
         const userData = response.data.data[0];
         if (userData.subject) {
@@ -168,7 +169,7 @@ function UserProfile() {
 
   const saveUserBackground = async (data) => {
     try {
-      const response = await axios.post('http://localhost:5000/userInfo/storeUserBackground', data);
+      const response = await axios.post(`${backendBaseUrl}/userInfo/storeUserBackground`, data);
       console.log('Profile saved:', response.data);
       setSuccessMessage('Profile saved successfully!');
     } catch (error) {

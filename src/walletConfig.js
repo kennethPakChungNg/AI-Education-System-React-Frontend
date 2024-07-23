@@ -1,7 +1,7 @@
 import { defaultWagmiConfig } from '@web3modal/wagmi/react/config'
 import { createWeb3Modal } from '@web3modal/wagmi/react'
 import { mainnet, arbitrum } from 'viem/chains'
-
+import { frontEndBaseUrl } from './serverConfig'
 // Replace with your Project ID
 const projectId = '600c0d5395ccb48f16ff07f0357f3543'
 
@@ -27,7 +27,7 @@ const thetaTestnet = {
 const metadata = {
   name: 'Theta Learning Platform',
   description: 'Learn and earn on Theta network',
-  url: 'http://localhost:3000', // replace with your website when deployed
+  url: frontEndBaseUrl, // replace with your website when deployed
   icons: ['../src/assets/images/Full-Logo.png'] // make sure this path is correct
 }
 

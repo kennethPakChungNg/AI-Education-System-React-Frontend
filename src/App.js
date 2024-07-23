@@ -10,6 +10,7 @@ import Home from './components/Home';
 import UserProfile from './components/UserProfile';
 import SuggestedCourse from './components/SuggestedCourse';
 import './App.css';
+import { backendBaseUrl } from './serverConfig';
 
 const queryClient = new QueryClient()
 
@@ -53,7 +54,7 @@ function AppContent() {
   //handle renaming course in course outline collection (have wallet address)
   const handleCourseRename = async (courseId, newName) => {
     try {
-      await axios.post('http://localhost:5000/courseOutline/updateCourseName', {
+      await axios.post(`${backendBaseUrl}/courseOutline/updateCourseName`, {
         WalletAddress: address,
         CourseId: courseId,
         CourseName: newName
@@ -103,7 +104,7 @@ function AppContent() {
 
   const handleStartLearning = async (courseName, courseOutline) => {
     try {
-      const response = await axios.post('http://localhost:5000/courseOutline/saveCourseOutline', {
+      const response = await axios.post(`${backendBaseUrl}/courseOutline/saveCourseOutline`, {
         WalletAddress: address,
         courseName: courseName,
         courseOutline: courseOutline
@@ -127,14 +128,14 @@ function AppContent() {
 
   /*const addCourseToHistory = async (course, outline) => {
     try {
-      const response = await axios.post('http://localhost:5000/courseOutline/saveCourseOutline', {
+      const response = await axios.post(`${backendBaseUrl}/courseOutline/saveCourseOutline`, {
         WalletAddress: address,
         courseName: course,
         courseOutline: outline
       });
       if (response.data && response.data.data && response.data.data.courseId) {
         console.log('Course added to history:', response.data.data);
-        await axios.post('http://localhost:5000/conversation/saveSingleEduConversation', {
+        await axios.post(`${backendBaseUrl}/conversation/saveSingleEduConversation`, {
           WalletAddress: address,
           CourseId: response.data.data.courseId,
           TopicId: 'Introduction',
@@ -157,11 +158,11 @@ function AppContent() {
   console.log('handleCourseHistoryClick called with courseId:', courseId);
   try {
     const [outlineResponse, conversationResponse] = await Promise.all([
-      axios.post('http://localhost:5000/courseOutline/queryCourseOutline', {
+      axios.post(`${backendBaseUrl}/courseOutline/queryCourseOutline`, {
         WalletAddress: address,
         courseId: courseId
       }),
-      axios.post('http://localhost:5000/conversation/queryEduConversation', {
+      axios.post(`${backendBaseUrl}/conversation/queryEduConversation`, {
         WalletAddress: address,
         CourseId: courseId,
         TopicId: 'A',

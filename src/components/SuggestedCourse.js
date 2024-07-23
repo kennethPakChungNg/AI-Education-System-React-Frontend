@@ -6,7 +6,7 @@ import { styled } from '@mui/material/styles';
 import axios from 'axios';
 import ChatWindow from './ChatWindow';
 import MessageInput from './MessageInput';
-
+import { backendBaseUrl } from '../serverConfig';
 const LoadingIndicator = styled(Box)(({ theme }) => ({
   display: 'flex',
   justifyContent: 'center',
@@ -86,7 +86,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
     };
 
     //start conversation with AI
-    const handleStartLearning = async () => {
+    const handleSuggCourseStartLearning = async () => {
         try {
           let currentOutline;    
           if (courseId) {
@@ -106,7 +106,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
 
             console.log('Formatted outline:', formattedOutline);
 
-            const response = await axios.post('http://localhost:5000/courseOutline/saveCourseOutline', {
+            const response = await axios.post(`${backendBaseUrl}/courseOutline/saveCourseOutline`, {
               WalletAddress: walletAddress,
               courseName: courseTitle,
               courseOutline: formattedOutline
@@ -151,11 +151,11 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
     const loadExistingCourse = useCallback(async (courseId) => {
       try {
         const [outlineResponse, conversationResponse] = await Promise.all([
-          axios.post('http://localhost:5000/courseOutline/queryCourseOutline', {
+          axios.post(`${backendBaseUrl}/courseOutline/queryCourseOutline`, {
             WalletAddress: walletAddress,
             courseId: courseId
           }),
-          axios.post('http://localhost:5000/conversation/queryEduConversation', {
+          axios.post(`${backendBaseUrl}/conversation/queryEduConversation`, {
             WalletAddress: walletAddress,
             CourseId: courseId,
             TopicId: 'A',
@@ -253,7 +253,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
           await saveConversation('user', text, currentOutline.courseId, topicId, subTopicId);
       
           setIsAIResponding(true);
-          const response = await axios.post('http://localhost:5000/aiGen/answerUserQuestion', requestData);
+          const response = await axios.post(`${backendBaseUrl}/aiGen/answerUserQuestion`, requestData);
           setIsAIResponding(false);
       
           console.log('AI response:', response.data);
@@ -293,7 +293,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
       
           console.log("Payload being sent to server:", payload);
       
-          const response = await axios.post('http://localhost:5000/quiz/calQuizResult', payload);
+          const response = await axios.post(`${backendBaseUrl}/quiz/calQuizResult`, payload);
       
           console.log('Full response from server:', response);
       
@@ -344,7 +344,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
 
           console.log('Updated outline for isCompleted:', updatedOutline);
 
-          await axios.post('http://localhost:5000/courseOutline/updateLearningStatus', {
+          await axios.post(`${backendBaseUrl}/courseOutline/updateLearningStatus`, {
             WalletAddress: walletAddress,
             CourseId: outline.courseId,
             TopicId: topicKey,
@@ -369,7 +369,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
           ConversationTimestamp: Math.floor(Date.now() / 1000)
         };
         try {
-          await axios.post('http://localhost:5000/conversation/saveSingleEduConversation', payload);
+          await axios.post(`${backendBaseUrl}/conversation/saveSingleEduConversation`, payload);
         } catch (error) {
           console.error('Error saving conversation:', error);
         }
@@ -380,7 +380,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
         setQuizAnswers({});
         setIsQuizGenerating(true);
         try {
-          const response = await axios.post('http://localhost:5000/aiGen/generateQuiz', {
+          const response = await axios.post(`${backendBaseUrl}/aiGen/generateQuiz`, {
             WalletAddress: walletAddress,
             CourseId: outline.courseId,
             TopicId: topicKey,
@@ -536,7 +536,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
                     <MessageInput onSendMessage={(text) => handleSendMessage(text)} />
                 ) : (
                     <Button 
-                        onClick={handleStartLearning}
+                        onClick={handleSuggCourseStartLearning}
                         variant="contained"
                         sx={{ alignSelf: 'center', mt: 2, mb: 2 }}
                     >
