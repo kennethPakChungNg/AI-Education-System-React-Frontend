@@ -86,7 +86,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
     };
 
     //start conversation with AI
-    const handleSuggCourseStartLearning = async () => {
+    const handleStartLearning = async () => {
         try {
           let currentOutline;    
           if (courseId) {
@@ -230,7 +230,8 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
           const match = text.match(/"([^:]+): ([^"]+)"/);
           if (match) {
             const [, topic, subtopic] = match;
-            topicId = Object.keys(currentOutline.courseOutline).find(key => currentOutline.courseOutline[key].topic.trim() === topic.trim());
+            //topicId = Object.keys(currentOutline.courseOutline).find(key => currentOutline.courseOutline[key].topic.trim() === topic.trim());
+            topicId= Object.keys(currentOutline.courseOutline).find(key => key === topic.trim());
             subTopicId = currentOutline.courseOutline[topicId].details.findIndex(detail => Object.values(detail)[0].trim() === subtopic.trim());
             subTopicId = `${topicId}.${subTopicId + 1}`;
           } else {
@@ -536,7 +537,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
                     <MessageInput onSendMessage={(text) => handleSendMessage(text)} />
                 ) : (
                     <Button 
-                        onClick={handleSuggCourseStartLearning}
+                        onClick={handleStartLearning}
                         variant="contained"
                         sx={{ alignSelf: 'center', mt: 2, mb: 2 }}
                     >
