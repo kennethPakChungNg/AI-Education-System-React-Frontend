@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
-import { WagmiConfig, useAccount } from 'wagmi'
+import { WagmiProvider , useAccount } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { wagmiConfig } from './walletConfig';
 import Sidebar from './components/Sidebar';
@@ -13,6 +13,7 @@ import UserProfile from './components/UserProfile';
 import SuggestedCourse from './components/SuggestedCourse';
 import NewCourseWindow from './components/NewCourseWindow';
 import './App.css';
+import { backendBaseUrl } from './serverConfig';
 
 const queryClient = new QueryClient()
 
@@ -72,7 +73,7 @@ function AppContent() {
   
       console.log('Generating course outline for topic in New Course:', topic);
       
-      const response = await axios.post('http://localhost:5000/aiGen/genCourseOutline', {
+      const response = await axios.post(`${backendBaseUrl}/aiGen/genCourseOutline`, {
         WalletAddress: address,
         TopicName: topic
       });
@@ -109,7 +110,7 @@ function AppContent() {
 
       setNewCourseMessages(prev => [...prev, { id: prev.length + 1, text: modification, sender: 'user' }]);
 
-      const response = await axios.post('http://localhost:5000/aiGen/genCourseOutline', {
+      const response = await axios.post(`${backendBaseUrl}/aiGen/genCourseOutline`, {
         WalletAddress: address,
         TopicName: Object.values(newCourseOutline)[0].topic, // Use the first topic as the main topic
         LastGeneratedCourseOutline: newCourseOutline,
@@ -143,7 +144,7 @@ function AppContent() {
 
   const handleStartWithCourseOutline = async (courseName, callback) => {
     try {
-      const response = await axios.post('http://localhost:5000/courseOutline/saveCourseOutline', {
+      const response = await axios.post(`${backendBaseUrl}/courseOutline/saveCourseOutline`, {
         WalletAddress: address,
         courseName: courseName,
         courseOutline: newCourseOutline
@@ -164,7 +165,7 @@ function AppContent() {
         ]);
   
         // Trigger the AI response for the first subtopic
-        const aiResponse = await axios.post('http://localhost:5000/aiGen/answerUserQuestion', {
+        const aiResponse = await axios.post(`${backendBaseUrl}/aiGen/answerUserQuestion`, {
           WalletAddress: address,
           CourseId: newCourseId,
           TopicId: firstTopic,
