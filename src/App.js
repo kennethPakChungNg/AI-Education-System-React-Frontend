@@ -1,16 +1,18 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
-import { WagmiProvider , useAccount } from 'wagmi'
+import { WagmiConfig, useAccount } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { wagmiConfig } from './walletConfig';
 import Sidebar from './components/Sidebar';
 import ChatWindow from './components/ChatWindow';
 import MessageInput from './components/MessageInput';
+import { Box } from '@mui/material';
+import CourseOutlineDisplay from './components/CourseOutlineDisplay';
 import Home from './components/Home';
 import UserProfile from './components/UserProfile';
 import SuggestedCourse from './components/SuggestedCourse';
+import NewCourseWindow from './components/NewCourseWindow';
 import './App.css';
-import { backendBaseUrl } from './serverConfig';
 
 const queryClient = new QueryClient()
 
@@ -23,6 +25,195 @@ function AppContent() {
   const [suggestedCourseInfo, setSuggestedCourseInfo] = useState(null);
   const { address } = useAccount();
   const sidebarRef = useRef();
+  const [newCourseState, setNewCourseState] = useState('initial');
+  const [newCourseOutline, setNewCourseOutline] = useState(null);
+  const [showCourseOutline, setShowCourseOutline] = useState(false);
+  const [isNewCourse, setIsNewCourse] = useState(false);
+
+  const [newCourseMessages, setNewCourseMessages] = useState([
+    { id: 1, text: "Welcome! I'm your AI teacher.", sender: 'ai' },
+    { id: 2, text: "What topic would you like to learn about? I'll create a customized course outline for you.", sender: 'ai' },
+  ]);
+
+
+  ////////////////////////      New Course Feature      ///////////////////////////////////////
+  const formatCourseOutline = (rawOutline) => {
+    const formattedOutline = {};
+    Object.entries(rawOutline).forEach(([key, value]) => {
+      formattedOutline[key] = {
+        topic: value.topic.replace(/\*\*/g, '').trim(), // Remove asterisks from topic
+        details: value.details.map(detail => {
+          const subKey = Object.keys(detail)[0];
+          return {
+            [subKey]: detail[subKey].replace(/\*\*/g, '').trim(), // Remove asterisks from subtopics
+            isCompleted: false
+          };
+        })
+      };
+    });
+    return formattedOutline;
+  };
+
+  const formatCourseOutlineForDisplay = (outline) => {
+    return Object.entries(outline).map(([key, value]) => {
+      const topicLine = `<strong>${key}: ${value.topic}</strong><br>`;
+      const subtopics = value.details.map(detail => {
+        const subKey = Object.keys(detail)[0];
+        return `&nbsp;&nbsp;&nbsp;&nbsp;${subKey}: ${detail[subKey]}`;
+      }).join('<br>');
+      return `${topicLine}${subtopics}`;
+    }).join('<br><br>');
+  };
+
+
+  const handleGenerateCourseOutline = async (topic) => {
+    try {
+      setNewCourseMessages(prev => [...prev, { id: prev.length + 1, text: topic, sender: 'user' }]);
+  
+      console.log('Generating course outline for topic in New Course:', topic);
+      
+      const response = await axios.post('http://localhost:5000/aiGen/genCourseOutline', {
+        WalletAddress: address,
+        TopicName: topic
+      });
+  
+      console.log('Full response from genCourseOutline:', response);
+  
+      if (response.data && response.data.data) {
+        const rawOutline = response.data.data;
+        console.log('Raw outline:', rawOutline);  // Add this line
+  
+        const formattedOutline = formatCourseOutline(rawOutline);
+        const displayOutline = formatCourseOutlineForDisplay(formattedOutline);
+        
+        setNewCourseMessages(prev => [...prev, 
+          { id: prev.length + 1, text: 'Here is the generated course outline:', sender: 'ai' },
+          { id: prev.length + 2, text: displayOutline, sender: 'ai', isOutline: true }
+        ]);
+        setNewCourseOutline(formattedOutline);
+        setNewCourseState('outline-generated');
+        setShowCourseOutline(false); // Hide the course outline initially
+        console.log('New Course Formatted outline:', formattedOutline);
+      } else {
+        console.error('Received empty or invalid course outline data');
+        setNewCourseMessages(prev => [...prev, { id: prev.length + 1, text: 'Error: Received empty or invalid course outline. Please try again.', sender: 'ai' }]);
+      }
+    } catch (error) {
+      console.error('Error generating course outline:', error);
+      setNewCourseMessages(prev => [...prev, { id: prev.length + 1, text: 'Error generating course outline. Please try again.', sender: 'ai' }]);
+    }
+  };
+
+  const handleModifyCourseOutline = async (modification) => {
+    try {
+
+      setNewCourseMessages(prev => [...prev, { id: prev.length + 1, text: modification, sender: 'user' }]);
+
+      const response = await axios.post('http://localhost:5000/aiGen/genCourseOutline', {
+        WalletAddress: address,
+        TopicName: Object.values(newCourseOutline)[0].topic, // Use the first topic as the main topic
+        LastGeneratedCourseOutline: newCourseOutline,
+        UserComment: modification
+      });
+  
+      console.log('Full response from modifyCourseOutline:', response);
+  
+      if (response.data && response.data.data) {
+        const rawOutline = response.data.data;
+        console.log('Raw modified outline:', rawOutline);
+  
+        const formattedOutline = formatCourseOutline(rawOutline);
+        const displayOutline = formatCourseOutlineForDisplay(formattedOutline);
+        
+        setNewCourseMessages(prev => [...prev, 
+          { id: prev.length + 1, text: 'Here is the modified course outline:', sender: 'ai' },
+          { id: prev.length + 2, text: displayOutline, sender: 'ai', isOutline: true }
+        ]);
+        setNewCourseOutline(formattedOutline);
+      } else {
+        console.error('Received empty or invalid modified course outline data');
+        setNewCourseMessages(prev => [...prev, { id: prev.length + 1, text: 'Error: Received empty or invalid modified course outline. Please try again.', sender: 'ai' }]);
+      }
+    } catch (error) {
+      console.error('Error modifying course outline:', error);
+      setNewCourseMessages(prev => [...prev, { id: prev.length + 1, text: 'Error modifying course outline. Please try again.', sender: 'ai' }]);
+    }
+  };
+
+
+  const handleStartWithCourseOutline = async (courseName, callback) => {
+    try {
+      const response = await axios.post('http://localhost:5000/courseOutline/saveCourseOutline', {
+        WalletAddress: address,
+        courseName: courseName,
+        courseOutline: newCourseOutline
+      });
+  
+      if (response.data && response.data.data && response.data.data.courseId) {
+        const newCourseId = response.data.data.courseId;
+        const firstTopic = Object.keys(newCourseOutline)[0];
+        const firstSubtopic = Object.keys(newCourseOutline[firstTopic].details[0])[0];
+        
+        callback(newCourseId, firstTopic, firstSubtopic);
+        setShowCourseOutline(true);
+        
+        // Start teaching the first subtopic
+        const initialMessage = `Let's start with ${newCourseOutline[firstTopic].topic}: ${newCourseOutline[firstTopic].details[0][firstSubtopic]}`;
+        setNewCourseMessages(prev => [...prev, 
+          { id: prev.length + 1, text: initialMessage, sender: 'ai' }
+        ]);
+  
+        // Trigger the AI response for the first subtopic
+        const aiResponse = await axios.post('http://localhost:5000/aiGen/answerUserQuestion', {
+          WalletAddress: address,
+          CourseId: newCourseId,
+          TopicId: firstTopic,
+          SubTopicId: firstSubtopic,
+          Message: initialMessage
+        });
+  
+        if (aiResponse.data && aiResponse.data.data) {
+          setNewCourseMessages(prev => [...prev, 
+            { id: prev.length + 1, text: aiResponse.data.data, sender: 'ai' }
+          ]);
+        }
+  
+        // Update the sidebar
+        if (sidebarRef.current && sidebarRef.current.fetchCourseHistory) {
+          sidebarRef.current.fetchCourseHistory();
+        }
+
+        // Update the sidebar with the new course
+        if (sidebarRef.current && sidebarRef.current.updateCourseHistory) {
+          sidebarRef.current.updateCourseHistory({
+            courseId: newCourseId,
+            courseName: courseName
+          });
+        }
+
+      }
+    } catch (error) {
+      console.error('Error saving course outline:', error);
+    }
+  };
+
+
+
+
+
+
+  ////////////////////////////////////////////////////////////////////////////////////////////////
+
+  const handleCheckboxChange = async (topicKey, subtopicKey) => {
+    // Implement checkbox change logic here
+    console.log('Checkbox changed:', topicKey, subtopicKey);
+  };
+  
+  const handleQuizClick = async (topicKey, subtopicKey) => {
+    // Implement quiz click logic here
+    console.log('Quiz clicked:', topicKey, subtopicKey);
+  };
+
 
   // Formatting the AI response
   const formatAIResponse = (text) => {
@@ -217,10 +408,31 @@ function AppContent() {
       <div className="main-content">
         {activeComponent === 'Home' && <Home onStartLearning={handleStartLearning} />}
         {activeComponent === 'ChatWindow' && (
-          <div className="chat-container">
-            <ChatWindow messages={messages} />
-            <MessageInput onSendMessage={handleSendMessage} />
-          </div>
+          <Box display="flex" height="100vh">
+            <Box flex={1} display="flex" flexDirection="column">
+              {isNewCourse ? (
+                <NewCourseWindow 
+                  messages={newCourseMessages}
+                  setMessages={setNewCourseMessages}
+                  newCourseState={newCourseState}
+                  setNewCourseState={setNewCourseState}
+                  onGenerateCourseOutline={handleGenerateCourseOutline}
+                  onModifyCourseOutline={handleModifyCourseOutline}
+                  onStartWithCourseOutline={handleStartWithCourseOutline}
+                  address={address}
+                />
+              ) : (
+                <ChatWindow messages={messages} />
+              )}
+            </Box>
+            {showCourseOutline && newCourseOutline && (
+              <CourseOutlineDisplay 
+                outline={newCourseOutline}
+                onCheckboxChange={handleCheckboxChange}
+                onQuizClick={handleQuizClick}
+              />
+            )}
+          </Box>
         )}
         {activeComponent === 'SuggestedCourse' && suggestedCourseInfo && address && (
           <SuggestedCourse 

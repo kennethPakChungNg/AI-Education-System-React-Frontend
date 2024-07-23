@@ -75,8 +75,8 @@ body {
 }
 
 .system-icon {
-  width: 319px;
-  height: auto;
+  width: 340px;
+  height: 250px;
 }
 
 .search-input {
@@ -322,7 +322,7 @@ p {
 
 .course-history-item {
   padding: 4px 16px !important;
-  width: 100%;
+  width: 90% !important;
 }
 
 .renaming-course, .course-item {
@@ -387,5 +387,33 @@ p {
 }
 
 .ps-submenu-content .ps-menu-button {
-  padding-left: 24px !important;
+  padding-left: 4px !important;
+}
+
+.ps-sidebar-root {
+  overflow-y: auto;
+  max-height: 100vh;
+}
+
+.message-content.ai h3 {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  color: #2c3e50;
+}
+
+.message-content.ai p {
+  margin-bottom: 0.8em;
+}
+
+.message-content.ai ul, .message-content.ai ol {
+  margin-left: 1em;
+  margin-bottom: 0.8em;
+}
+
+.message-content.ai li {
+  margin-bottom: 0.4em;
+}
+
+.message-content.ai strong {
+  color: #23330a;
 }
