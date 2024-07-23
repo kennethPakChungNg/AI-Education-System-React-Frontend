@@ -246,7 +246,8 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
             CourseId: currentOutline.courseId,
             TopicId: topicId,
             SubTopicId: subTopicId,
-            Message: text
+            Message: text,
+            model: 'gemma2b'
           };
       
           console.log('Sending request to AI:', requestData);
