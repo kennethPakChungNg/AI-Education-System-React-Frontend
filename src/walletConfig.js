@@ -2,6 +2,8 @@ import { defaultWagmiConfig } from '@web3modal/wagmi/react/config'
 import { createWeb3Modal } from '@web3modal/wagmi/react'
 import { mainnet, arbitrum } from 'viem/chains'
 import { frontEndBaseUrl } from './serverConfig'
+import { http, createConfig } from 'wagmi'
+import { injected, metaMask, safe, walletConnect } from 'wagmi/connectors'
 // Replace with your Project ID
 const projectId = '600c0d5395ccb48f16ff07f0357f3543'
 
@@ -33,10 +35,18 @@ const metadata = {
 
 const chains = [thetaTestnet, mainnet, arbitrum]
 
-const wagmiConfig = defaultWagmiConfig({
+const wagmiConfig = createConfig({
   chains,
-  projectId,
-  metadata,
+  connectors: [
+    injected(),
+    walletConnect({ projectId }),
+    metaMask(),
+    safe(),
+  ],
+  transports: {
+    [thetaTestnet.id]: http(),
+    [mainnet.id]: http(),
+  },
 })
 
 createWeb3Modal({ wagmiConfig, projectId, chains })

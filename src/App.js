@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import axios from 'axios';
-import { WagmiConfig, useAccount } from 'wagmi'
+import { WagmiProvider , useAccount } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { wagmiConfig } from './walletConfig';
 import Sidebar from './components/Sidebar';
@@ -239,11 +239,11 @@ function AppContent() {
 
 function App() {
   return (
-    <WagmiConfig config={wagmiConfig}>
+    <WagmiProvider  config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <AppContent />
       </QueryClientProvider>
-    </WagmiConfig>
+    </WagmiProvider >
   );
 }
 
