@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Box } from '@mui/material';
+import { TextField, Box, RadioGroup, FormControlLabel, Radio } from '@mui/material';
 import sendIcon from '../assets/icons/send-message.png';
 
 function MessageInput({ onSendMessage, initialText = '' }) {
   const [inputText, setInputText] = useState(initialText);
+  const [withImage, setWithImage] = useState(false);
 
   useEffect(() => {
     setInputText(initialText);
@@ -15,7 +16,7 @@ function MessageInput({ onSendMessage, initialText = '' }) {
 
   const handleSend = () => {
     if (inputText.trim() !== '') {
-      onSendMessage(inputText);
+      onSendMessage(inputText, withImage);
       setInputText('');
     }
   };
@@ -40,8 +41,9 @@ function MessageInput({ onSendMessage, initialText = '' }) {
         onKeyPress={handleKeyPress}
         sx={{
           marginRight: 1,
+          flexGrow: 1,
           '& .MuiOutlinedInput-root': {
-            backgroundColor: '#254336', // Change this to your desired background color
+            backgroundColor: '#254336',
             borderRadius: '15px',
             fontSize: '18px',
             fontFamily: 'Libre Baskerville, Arial, sans-serif',
@@ -50,24 +52,57 @@ function MessageInput({ onSendMessage, initialText = '' }) {
             color: '#ffffff',
           },
           '& .MuiInputLabel-root': {
-            color: '#666666', // Change this to your desired label color
+            color: '#666666',
           },
           '& .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#111111', // Change this to your desired border color
+            borderColor: '#111111',
           },
         }}
       />
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginLeft: 1 }}>
+        <RadioGroup
+          row
+          value={withImage ? 'with' : 'without'}
+          onChange={(e) => setWithImage(e.target.value === 'with')}
+          sx={{
+            '& .MuiFormControlLabel-root': {
+              color: '#ffffff',
+              marginRight: 0,
+            },
+            '& .MuiRadio-root': {
+              color: '#ffffff',
+            },
+            '& .MuiRadio-root.Mui-checked': {
+              color: '#ffffff',
+            },
+          }}
+        >
+          <FormControlLabel
+            value="with"
+            control={<Radio sx={{ color: '#ffffff', '&.Mui-checked': { color: '#ffffff' } }} />}
+            label="With Image"
+          />
+          <FormControlLabel
+            value="without"
+            control={<Radio sx={{ color: '#ffffff', '&.Mui-checked': { color: '#ffffff' } }} />}
+            label="Without Image"
+          />
+        </RadioGroup>
+      </Box>
       <Box
         component="button"
         onClick={handleSend}
         aria-label="send message"
         sx={{
           width: 48,
-          height: 48,
+          height: '100%',
           padding: 0,
           border: 'none',
           background: 'none',
           cursor: 'pointer',
+          marginLeft: 0,
+          display: 'flex',
+          alignItems: 'center',
           '&:hover': {
             opacity: 0.8,
           },
