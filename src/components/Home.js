@@ -5,7 +5,7 @@ import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import CardActions from '@mui/material/CardActions';
 import Typography from '@mui/material/Typography';
-import { ButtonGroup, Button, Container, CircularProgress } from '@mui/material';
+import { ButtonGroup, Button, Container, CircularProgress, Box } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import blockchainIcon from '../assets/icons/blockchain_logo.png';
 import nftIcon from '../assets/icons/nft.png';
@@ -16,7 +16,48 @@ import smartContractIcon from '../assets/icons/smart-contracts.png';
 import AddIcon from '@mui/icons-material/Add';
 import startLearningIcon from '../assets/icons/start_to_learn.png';
 import instructionBackground from '../assets/images/instruction_background.jpg';
-import { backendBaseUrl } from '../serverConfig';
+
+const ScrollableContainer = styled('div')(({ theme }) => ({
+  maxHeight: 'calc(100vh - 400px)', 
+  overflowY: 'auto',
+  '&::-webkit-scrollbar': {
+    width: '8px', 
+  },
+  '&::-webkit-scrollbar-track': {
+    background: 'transparent', 
+  },
+  '&::-webkit-scrollbar-thumb': {
+    background: '#B7B597', 
+    borderRadius: '4px',
+    '&:hover': {
+      background: '#A5A384',
+    },
+  },
+  scrollbarWidth: 'thin',
+  scrollbarColor: '#B7B597 transparent',
+}));
+
+
+const ScrollableHome = styled('div')(({ theme }) => ({
+  height: '100vh',
+  overflowY: 'auto',
+  '&::-webkit-scrollbar': {
+    width: '8px',
+  },
+  '&::-webkit-scrollbar-track': {
+    background: 'transparent',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    background: '#1a2f26',
+    borderRadius: '4px',
+    '&:hover': {
+      background: '#1a2f26',
+    },
+  },
+  scrollbarWidth: 'thin',
+  scrollbarColor: '#FFEECC transparent',
+}));
+
 
 const StyledButtonGroup = styled(ButtonGroup)({
   '& .MuiButtonGroup-grouped': {
@@ -69,7 +110,7 @@ function Home({ onStartLearning }) {
   useEffect(() => {
     const fetchCourseOutlines = async () => {
       try {
-        const response = await axios.get(`${backendBaseUrl}/courseOutline/suggestedCourseOutlines`);
+        const response = await axios.get('http://localhost:5000/courseOutline/suggestedCourseOutlines');
         if (response.data && response.data.data) {
           setCourseOutlines(response.data.data);
         } else {
@@ -100,7 +141,8 @@ function Home({ onStartLearning }) {
     const outlineContent = course.courseOutline;
   
     return (
-      <Card sx={{ maxWidth: '100%', marginTop: 4 }} style={{backgroundColor: '#F1F8E8'}}>
+      <Card sx={{ maxWidth: '100%', position: 'relative', pb: 8 }} style={{backgroundColor: '#F1F8E8'}}>
+        <ScrollableContainer style={{ maxHeight: 'calc(100vh - 400px)', overflowY: 'auto' }}>
         <CardContent>
           <Typography variant="h4" component="div" gutterBottom style={{ textAlign: 'center', fontFamily: 'Libre Baskerville Bold, sans-serif' }}>
             {activeTab} Course Outline
@@ -134,7 +176,13 @@ function Home({ onStartLearning }) {
             )}
           </Typography>
         </CardContent>
-        <CardActions style={{ width: '100%', margin: '20px 920px' }}>
+        </ScrollableContainer>
+        <Box sx={{
+          position: 'absolute',
+          bottom: 16,
+          right: 16,
+          zIndex: 1,
+        }}>
           <Button 
             className="start-learning-btn"
             onClick={() => onStartLearning(activeTab, outlineContent, true)}
@@ -146,7 +194,7 @@ function Home({ onStartLearning }) {
           >
             Start Learning
           </Button>
-        </CardActions>
+        </Box>
       </Card>
     );
   };
@@ -161,72 +209,74 @@ function Home({ onStartLearning }) {
   ];
 
   return (
-    <div className="home">
-      <Card sx={{ maxWidth: 1350, position: 'relative', margin: '50px 120px' }} className="home-instruction">
-        <CardMedia
-          component="img"
-          height="400"
-          image={instructionBackground}
-          alt="Background Img"
-        />
-        <CardContent
-          sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '45%',
-            height: '100%',
-            paddingLeft: '600px',
-            color: '#152621',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-          }}
-        >
-          <Typography variant="h3" sx={{ fontFamily: 'Libre Baskerville Bold, sans-serif', fontSize: '42px' }}>
-            Speed Your Learning By AI
-          </Typography>
-          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', marginTop: 2 , fontFamily: 'Libre Baskerville, sans-serif', paddingTop: '30px', marginLeft: '3px'}}>
-            Traditional Education System Will Be Changed By AI.
-          </Typography>
-        </CardContent>
-      </Card>
-      <div className="course-suggestions-section">
-        <Container maxWidth="lg">
-          <Typography variant="h3" sx={{ fontFamily: 'Libre Baskerville Bold, sans-serif', fontSize: '45px', paddingBottom:'20px', color: '#111111' }}>
-            Course Suggestions
-          </Typography>
-          <Typography variant="h6" 
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              fontFamily: 'Libre Baskerville, sans-serif', 
-              paddingTop: '0px', 
-              marginLeft: '5px',
-              marginBottom: '10px',
-              }}>
-            Choose the pre-defined course below to begin OR Press 
-            <AddIcon sx={{ marginLeft: '5px', marginRight: '5px', color: '#152621' }} />
-            in sidebar to create your new course.
-          </Typography>
-          <StyledButtonGroup variant="contained" aria-label="course selection button group">
-            {tabs.map((tab) => (
-              <StyledButton
-                key={tab.name}
-                onClick={() => setActiveTab(tab.name)}
-                className={activeTab === tab.name ? 'active' : ''}
-              >
-                <TabIcon src={tab.icon} alt={tab.name} />
-                {tab.name}
-              </StyledButton>
-            ))}
-          </StyledButtonGroup>
-        </Container>
-        <Container maxWidth="lg">
-          <div className="tab-content">{renderTabContent()}</div>
-        </Container>
+    <ScrollableHome>
+      <div className="home">
+        <Card sx={{ maxWidth: 1350, position: 'relative', margin: '20px 120px' }} className="home-instruction">
+          <CardMedia
+            component="img"
+            height="400"
+            image={instructionBackground}
+            alt="Background Img"
+          />
+          <CardContent
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '45%',
+              height: '100%',
+              paddingLeft: '600px',
+              color: '#152621',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+            }}
+          >
+            <Typography variant="h3" sx={{ fontFamily: 'Libre Baskerville Bold, sans-serif', fontSize: '42px' }}>
+              Speed Your Learning By AI
+            </Typography>
+            <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', marginTop: 2 , fontFamily: 'Libre Baskerville, sans-serif', paddingTop: '20px', marginLeft: '3px'}}>
+              Traditional Education System Will Be Changed By AI.
+            </Typography>
+          </CardContent>
+        </Card>
+        <div className="course-suggestions-section">
+          <Container maxWidth="lg">
+            <Typography variant="h3" sx={{ fontFamily: 'Libre Baskerville Bold, sans-serif', fontSize: '45px', paddingBottom:'5px', color: '#111111' }}>
+              Course Suggestions
+            </Typography>
+            <Typography variant="h6" 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                fontFamily: 'Libre Baskerville, sans-serif', 
+                paddingTop: '0px', 
+                marginLeft: '5px',
+                marginBottom: '10px',
+                }}>
+              Choose the pre-defined course below to begin OR Press 
+              <AddIcon sx={{ marginLeft: '5px', marginRight: '5px', color: '#152621' }} />
+              in sidebar to create your new course.
+            </Typography>
+            <StyledButtonGroup variant="contained" aria-label="course selection button group">
+              {tabs.map((tab) => (
+                <StyledButton
+                  key={tab.name}
+                  onClick={() => setActiveTab(tab.name)}
+                  className={activeTab === tab.name ? 'active' : ''}
+                >
+                  <TabIcon src={tab.icon} alt={tab.name} />
+                  {tab.name}
+                </StyledButton>
+              ))}
+            </StyledButtonGroup>
+          </Container>
+          <Container maxWidth="lg" sx={{ height: 'calc(100vh - 300px)', mt: 4 }}>
+            <div className="tab-content">{renderTabContent()}</div>
+          </Container>
+        </div>
       </div>
-    </div>
+    </ScrollableHome>
   );
 }
 
