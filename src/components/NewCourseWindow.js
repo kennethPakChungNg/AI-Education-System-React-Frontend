@@ -1,9 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Paper, TextField, Button, Typography, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Paper, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import Message from './Message';
 import MessageInput from './MessageInput';
 import axios from 'axios';
-import { backendBaseUrl } from '../serverConfig';
+import { styled } from '@mui/material/styles';
+
+const ScrollableBox = styled(Box)(({ theme }) => ({
+  overflowY: 'auto',
+  '&::-webkit-scrollbar': {
+    width: '8px',
+  },
+  '&::-webkit-scrollbar-track': {
+    background: 'transparent',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    background: '#B7B597',
+    borderRadius: '4px',
+    '&:hover': {
+      background: '#A5A384',
+    },
+  },
+  scrollbarWidth: 'thin',
+  scrollbarColor: '#B7B597 transparent',
+}));
 
 function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseState, onGenerateCourseOutline, onModifyCourseOutline, onStartWithCourseOutline, address }) {
   const [topic, setTopic] = useState('');
@@ -52,7 +71,7 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
       const newMessage = { id: messages.length + 1, text, sender: 'user' };
       setMessages(prevMessages => [...prevMessages, newMessage]);
 
-      const textResponse = await axios.post(`${backendBaseUrl}/aiGen/answerUserQuestion`, {
+      const textResponse = await axios.post('http://localhost:5000/aiGen/answerUserQuestion', {
         WalletAddress: address,
         CourseId: courseId,
         TopicId: currentTopicId,
@@ -62,7 +81,7 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
 
       let imageResponse = null;
       if (withImage) {
-        imageResponse = await axios.post(`${backendBaseUrl}/aiGen/genEducateImage`, {
+        imageResponse = await axios.post('http://localhost:5000/aiGen/genEducateImage', {
           WalletAddress: address,
           CourseId: courseId,
           TopicId: currentTopicId,
@@ -86,7 +105,7 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
 
   return (
     <Box display="flex" flexDirection="column" height="100%">
-    {console.log('Rendering NewCourseWindow, newCourseState:', newCourseState)}
+      {console.log('Rendering NewCourseWindow, newCourseState:', newCourseState)}
       <Paper 
         elevation={3} 
         sx={{ 
@@ -96,7 +115,7 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
           backgroundColor: '#254336',
         }}
       >
-        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+        <ScrollableBox sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           {messages.map(msg => (
             <Message 
               key={msg.id} 
@@ -107,7 +126,7 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
             />
           ))}
           <div ref={messagesEndRef} />
-        </Box>
+        </ScrollableBox>
       </Paper>
       <Box sx={{ p: 2, backgroundColor: '#f1f8e8' }}>
         {newCourseState === 'initial' && (
@@ -123,7 +142,6 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
                 input: { color: 'white' }, 
                 borderRadius: '5px'
               }}
-              
             />
             <Button variant="contained" 
               size="small" 
@@ -131,9 +149,9 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
                 backgroundColor: '#6b8a7a',
               }}  
               onClick={() => {
-              onGenerateCourseOutline(topic);
-              setTopic('');
-            }}>
+                onGenerateCourseOutline(topic);
+                setTopic('');
+              }}>
               Generate Course Outline
             </Button>
           </Box>
@@ -156,9 +174,9 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
                 backgroundColor: '#6b8a7a',
               }} 
               onClick={() => {
-              onModifyCourseOutline(modification);
-              setModification('');
-            }}>
+                onModifyCourseOutline(modification);
+                setModification('');
+              }}>
               Modify Course Outline
             </Button>
             <Button variant="contained" size="small" 
@@ -171,7 +189,7 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
             </Button>
           </Box>
         )}
-        {(newCourseState === 'learning' || newCourseState === 'outline-generated') && (
+        {newCourseState === 'learning' && (
           <MessageInput onSendMessage={handleSendMessage} />
         )}
       </Box>

@@ -1,6 +1,26 @@
 import React, { useEffect, useRef } from 'react';
-import { Paper, Box } from '@mui/material';
+import { Box } from '@mui/material';
 import Message from './Message';
+import { styled } from '@mui/material/styles';
+
+const ScrollableBox = styled(Box)(({ theme }) => ({
+  overflowY: 'auto',
+  '&::-webkit-scrollbar': {
+    width: '8px',
+  },
+  '&::-webkit-scrollbar-track': {
+    background: 'transparent',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    background: '#B7B597',
+    borderRadius: '4px',
+    '&:hover': {
+      background: '#A5A384',
+    },
+  },
+  scrollbarWidth: 'thin',
+  scrollbarColor: '#B7B597 transparent',
+}));
 
 function ChatWindow({ messages }) {
   const messagesEndRef = useRef(null);
@@ -12,17 +32,17 @@ function ChatWindow({ messages }) {
   useEffect(scrollToBottom, [messages]);
 
   return (
-    <Paper 
-      elevation={3} 
+    <ScrollableBox 
       sx={{ 
-        height: 'calc(100vh - 100px)',
+        flexGrow: 1,
         overflowY: 'auto', 
         padding: 2,
         backgroundColor: '#254336',
+        height: 'calc(100vh - 100px)', // Adjust this value based on your MessageInput height
       }}
     >
       <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-      {messages.map(msg => (
+        {messages.map(msg => (
           <Message 
             key={msg.id} 
             text={msg.text} 
@@ -40,7 +60,7 @@ function ChatWindow({ messages }) {
         ))}
         <div ref={messagesEndRef} />
       </Box>
-    </Paper>
+    </ScrollableBox>
   );
 }
 
