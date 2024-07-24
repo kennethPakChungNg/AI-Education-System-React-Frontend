@@ -311,7 +311,7 @@ function AppContent() {
         return acc;
       }, {});
   
-      const response = await axios.post('http://localhost:5000/courseOutline/saveCourseOutline', {
+      const response = await axios.post(`${backendBaseUrl}/courseOutline/saveCourseOutline`, {
         WalletAddress: address,
         courseName: courseName,
         courseOutline: formattedOutline

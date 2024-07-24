@@ -3,6 +3,7 @@ import { Box, Paper, TextField, Button, Typography, Dialog, DialogTitle, DialogC
 import Message from './Message';
 import MessageInput from './MessageInput';
 import axios from 'axios';
+import { backendBaseUrl } from '../serverConfig';
 
 function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseState, onGenerateCourseOutline, onModifyCourseOutline, onStartWithCourseOutline, address }) {
   const [topic, setTopic] = useState('');
@@ -51,7 +52,7 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
       const newMessage = { id: messages.length + 1, text, sender: 'user' };
       setMessages(prevMessages => [...prevMessages, newMessage]);
 
-      const textResponse = await axios.post('http://localhost:5000/aiGen/answerUserQuestion', {
+      const textResponse = await axios.post(`${backendBaseUrl}/aiGen/answerUserQuestion`, {
         WalletAddress: address,
         CourseId: courseId,
         TopicId: currentTopicId,
@@ -61,7 +62,7 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
 
       let imageResponse = null;
       if (withImage) {
-        imageResponse = await axios.post('http://localhost:5000/aiGen/genEducateImage', {
+        imageResponse = await axios.post(`${backendBaseUrl}/aiGen/genEducateImage`, {
           WalletAddress: address,
           CourseId: courseId,
           TopicId: currentTopicId,

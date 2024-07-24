@@ -16,6 +16,7 @@ import smartContractIcon from '../assets/icons/smart-contracts.png';
 import AddIcon from '@mui/icons-material/Add';
 import startLearningIcon from '../assets/icons/start_to_learn.png';
 import instructionBackground from '../assets/images/instruction_background.jpg';
+import { backendBaseUrl } from '../serverConfig';
 
 const StyledButtonGroup = styled(ButtonGroup)({
   '& .MuiButtonGroup-grouped': {
@@ -68,7 +69,7 @@ function Home({ onStartLearning }) {
   useEffect(() => {
     const fetchCourseOutlines = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/courseOutline/suggestedCourseOutlines');
+        const response = await axios.get(`${backendBaseUrl}/courseOutline/suggestedCourseOutlines`);
         if (response.data && response.data.data) {
           setCourseOutlines(response.data.data);
         } else {

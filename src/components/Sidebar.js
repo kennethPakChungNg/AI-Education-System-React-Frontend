@@ -11,6 +11,7 @@ import aiIcon from '../assets/images/Full-Logo.png';
 import PersonIcon from '@mui/icons-material/Person';
 import suggestedCourseIcon from '../assets/icons/course.png'; 
 import NewCourseWindow from './NewCourseWindow';
+import { backendBaseUrl } from '../serverConfig';
 
 const SidebarComponent = forwardRef(({ onHomeClick, onNewCourseClick, onSuggestedCourseClick, onUserProfileClick, activeComponent, onCourseHistoryClick, onCourseRename }, ref) => {
   const [courseHistory, setCourseHistory] = useState([]);
@@ -23,7 +24,7 @@ const SidebarComponent = forwardRef(({ onHomeClick, onNewCourseClick, onSuggeste
     if (!address) return;
     console.log('Fetching course history for address:', address);
     try {
-      const response = await axios.post('http://localhost:5000/courseOutline/queryCourseOutline', {
+      const response = await axios.post(`${backendBaseUrl}/courseOutline/queryCourseOutline`, {
         WalletAddress: address,
         requiredField: ['courseId', 'courseName']
       });
