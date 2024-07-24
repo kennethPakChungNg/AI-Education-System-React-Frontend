@@ -29,7 +29,7 @@ function MessageInput({ onSendMessage, initialText = '' }) {
   };
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', padding: 2 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', padding: 2, backgroundColor: '#9EB384'}}>
       <TextField
         fullWidth
         multiline
@@ -95,7 +95,7 @@ function MessageInput({ onSendMessage, initialText = '' }) {
         aria-label="send message"
         sx={{
           width: 48,
-          height: '100%',
+          height: '50%',
           padding: 0,
           border: 'none',
           background: 'none',

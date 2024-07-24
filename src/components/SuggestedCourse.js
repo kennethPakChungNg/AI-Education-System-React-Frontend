@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
     Box, Typography, List, ListItem, ListItemIcon, ListItemText, Checkbox, Button, TextField, LinearProgress, Dialog, DialogTitle, DialogContent, DialogActions, Radio, RadioGroup, FormControlLabel, CircularProgress 
 } from '@mui/material';
@@ -6,7 +6,7 @@ import { styled } from '@mui/material/styles';
 import axios from 'axios';
 import ChatWindow from './ChatWindow';
 import MessageInput from './MessageInput';
-import { backendBaseUrl } from '../serverConfig';
+
 const LoadingIndicator = styled(Box)(({ theme }) => ({
   display: 'flex',
   justifyContent: 'center',
@@ -33,13 +33,16 @@ const StyledCircularProgress = styled(CircularProgress)({
   color: '#6B8A7A',
 });
 
-function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessages = [], walletAddress, courseId }) {
-    const [messages, setMessages] = useState(initialMessages.length > 0 ? initialMessages : [
-        { id: 1, text: `Welcome to ${courseTitle} course!`, sender: 'ai' },
-        { id: 2, text: "I'll be your AI teacher for this course. Let's begin with the course outline.", sender: 'ai' },
-        { id: 3, text: 'I will personalize the teaching style according to your saved user profile. Do you want to start?', sender: 'ai' },
-    ]);
-    const [started, setStarted] = useState(initialMessages.length > 0);
+function SuggestedCourse({ courseTitle, initialCourseOutline = {}, walletAddress, courseId }) {
+    const defaultMessages = useMemo(() => [
+      { id: 1, text: `Welcome to ${courseTitle} course!`, sender: 'ai' },
+      { id: 2, text: "I'll be your AI teacher for this course. Let's begin with the course outline.", sender: 'ai' },
+      { id: 3, text: 'I will personalize the teaching style according to your saved user profile. Do you want to start?', sender: 'ai' },
+    ], [courseTitle]);
+    
+    const [messages, setMessages] = useState(defaultMessages);
+    const [started, setStarted] = useState(false);
+    const [courseLoaded, setCourseLoaded] = useState(false);
     const [outline, setOutline] = useState({});
     const [progress, setProgress] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
@@ -52,6 +55,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
     const [isAIResponding, setIsAIResponding] = useState(false);
     const [isQuizGenerating, setIsQuizGenerating] = useState(false);
     const [isCalculatingResults, setIsCalculatingResults] = useState(false);
+    
 
     const formatCourseOutline = (rawOutline) => {
         if (!rawOutline) return {};
@@ -85,126 +89,96 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
         return formattedSections.join('\n\n');
     };
 
-    //start conversation with AI
-    const handleStartLearning = async () => {
-        try {
-          let currentOutline;    
-          if (courseId) {
-            currentOutline = await loadExistingCourse(courseId);
-          } else {
-            //const formattedOutline = formatCourseOutline(initialCourseOutline);
-            const formattedOutline = Object.entries(initialCourseOutline).reduce((acc, [topicKey, topicValue]) => {
-              acc[topicKey] = {
-                ...topicValue,
-                details: topicValue.details.map(detail => ({
-                  ...detail,
-                  isCompleted: false
-                }))
-              };
-              return acc;
-            }, {});
-
-            console.log('Formatted outline:', formattedOutline);
-
-            const response = await axios.post(`${backendBaseUrl}/courseOutline/saveCourseOutline`, {
-              WalletAddress: walletAddress,
-              courseName: courseTitle,
-              courseOutline: formattedOutline
-            });
-      
-            console.log('Save course outline response:', response.data);
-      
-            if (response.data && response.data.data && response.data.data.courseId) {
-              currentOutline = response.data.data;
-            }
-          }
-      
-          console.log('Current outline:', currentOutline);
-      
-          if (currentOutline && currentOutline.courseOutline) {
-            setOutline(currentOutline);
-            setStarted(true);
-      
-            const initialMessage = `Welcome to ${courseTitle} course! I'll be your AI teacher for this course. Let's begin with the course outline. I will personalize the teaching style according to your saved user profile. Do you want to start?`;
-            await saveConversation('system', initialMessage, currentOutline.courseId, 'A', 'A.1');
-      
-            const topics = Object.keys(currentOutline.courseOutline);
-            if (topics.length > 0) {
-              const firstTopic = topics[0];
-              const firstSubtopic = currentOutline.courseOutline[firstTopic].details[0];
-              const firstSubtopicKey = Object.keys(firstSubtopic)[0];
-              
-              console.log('Outline before sending message:', currentOutline);
-              await handleSendMessage(`Let's start learning about "${currentOutline.courseOutline[firstTopic].topic}: ${firstSubtopic[firstSubtopicKey]}"`, currentOutline);
-            } else {
-              console.error('No topics found in the course outline');
-            }
-          } else {
-            console.error('Failed to load or create course outline');
-          }
-        } catch (error) {
-          console.error('Error starting course:', error);
-        }
-    };
-
-      
     const loadExistingCourse = useCallback(async (courseId) => {
-      try {
-        const [outlineResponse, conversationResponse] = await Promise.all([
-          axios.post(`${backendBaseUrl}/courseOutline/queryCourseOutline`, {
-            WalletAddress: walletAddress,
-            courseId: courseId
-          }),
-          axios.post(`${backendBaseUrl}/conversation/queryEduConversation`, {
-            WalletAddress: walletAddress,
-            CourseId: courseId,
-            TopicId: 'A',
-            SubTopicId: 'A.1'
-          })
-        ]);
-    
-        if (outlineResponse.data && outlineResponse.data.data && outlineResponse.data.data[0]) {
-          const savedOutline = outlineResponse.data.data[0];
-          setOutline(savedOutline);
-          setStarted(true);
-    
-          if (conversationResponse.data && conversationResponse.data.data) {
-            const formattedMessages = conversationResponse.data.data.map(conv => ({
-              id: conv._id,
-              text: conv.Role === 'system' ? formatAIResponse(conv.Message) : conv.Message,
-              sender: conv.Role === 'system' ? 'ai' : 'user'
-            }));
-            setMessages(formattedMessages);
-          } else {
-            setMessages([
-              { id: 1, text: `Welcome to ${savedOutline.courseName} course!`, sender: 'ai' },
-              { id: 2, text: "I'll be your AI teacher for this course. Let's begin with the course outline.", sender: 'ai' },
-              { id: 3, text: 'I will personalize the teaching style according to your saved user profile. Do you want to start?', sender: 'ai' },
+        try {
+            const [outlineResponse, conversationResponse] = await Promise.all([
+                axios.post('http://localhost:5000/courseOutline/queryCourseOutline', {
+                    WalletAddress: walletAddress,
+                    courseId: courseId
+                }),
+                axios.post('http://localhost:5000/conversation/queryEduConversation', {
+                    WalletAddress: walletAddress,
+                    CourseId: courseId,
+                    TopicId: 'A',
+                    SubTopicId: 'A.1'
+                })
             ]);
-          }
-    
-          return savedOutline;
+
+            if (outlineResponse.data && outlineResponse.data.data && outlineResponse.data.data[0]) {
+                const savedOutline = outlineResponse.data.data[0];
+                setOutline(savedOutline);
+                setCourseLoaded(true);
+
+                if (conversationResponse.data && conversationResponse.data.data) {
+                    const formattedMessages = conversationResponse.data.data.map(conv => ({
+                        id: conv._id,
+                        text: conv.Role === 'system' ? formatAIResponse(conv.Message) : conv.Message,
+                        sender: conv.Role === 'system' ? 'ai' : 'user'
+                    }));
+                    setMessages(formattedMessages);
+                } else {
+                    setMessages(defaultMessages);
+                }
+
+                return savedOutline;
+            }
+        } catch (error) {
+            console.error('Error loading existing course:', error);
         }
-      } catch (error) {
-        console.error('Error loading existing course:', error);
-      }
-    }, [walletAddress]);
+    }, [walletAddress, defaultMessages]);
 
 
     useEffect(() => {
       if (courseId) {
-        loadExistingCourse(courseId);
+          loadExistingCourse(courseId);
       } else {
-        // Reset state for a new course
-        setOutline({});
-        setStarted(false);
-        setMessages([
-          { id: 1, text: `Welcome to ${courseTitle} course!`, sender: 'ai' },
-          { id: 2, text: "I'll be your AI teacher for this course. Let's begin with the course outline.", sender: 'ai' },
-          { id: 3, text: 'I will personalize the teaching style according to your saved user profile. Do you want to start?', sender: 'ai' },
-        ]);
+          setOutline(initialCourseOutline);
+          setCourseLoaded(true);
+          setMessages(defaultMessages);
       }
-    }, [courseId, loadExistingCourse, courseTitle]);
+    }, [courseId, loadExistingCourse, initialCourseOutline, defaultMessages]);
+
+
+    //start conversation with AI
+    const handleStartLearning = async () => {
+        setStarted(true);
+        try {
+            console.log('Starting course:', courseTitle);
+            let currentOutline = outline;
+
+            if (!courseId) {
+                const response = await axios.post('http://localhost:5000/courseOutline/saveCourseOutline', {
+                    WalletAddress: walletAddress,
+                    courseName: courseTitle,
+                    courseOutline: currentOutline
+                });
+
+                console.log('Save course outline response:', response.data);
+
+                if (response.data && response.data.data && response.data.data.courseId) {
+                    currentOutline = response.data.data;
+                    setOutline(currentOutline);
+                }
+            }
+
+            const initialMessage = `Welcome to ${courseTitle} course! I'll be your AI teacher for this course. Let's begin with the course outline. I will personalize the teaching style according to your saved user profile. Do you want to start?`;
+            await saveConversation('system', initialMessage, currentOutline.courseId, 'A', 'A.1');
+
+            const topics = Object.keys(currentOutline.courseOutline);
+            if (topics.length > 0) {
+                const firstTopic = topics[0];
+                const firstSubtopic = currentOutline.courseOutline[firstTopic].details[0];
+                const firstSubtopicKey = Object.keys(firstSubtopic)[0];
+                
+                console.log('Outline before sending message:', currentOutline);
+                await handleSendMessage(`Let's start learning about "${currentOutline.courseOutline[firstTopic].topic}: ${firstSubtopic[firstSubtopicKey]}"`, currentOutline);
+            } else {
+                console.error('No topics found in the course outline');
+            }
+        } catch (error) {
+            console.error('Error starting course:', error);
+        }
+    };
 
 
     //Handle message between user and chatgpt api
@@ -230,8 +204,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
           const match = text.match(/"([^:]+): ([^"]+)"/);
           if (match) {
             const [, topic, subtopic] = match;
-            //topicId = Object.keys(currentOutline.courseOutline).find(key => currentOutline.courseOutline[key].topic.trim() === topic.trim());
-            topicId= Object.keys(currentOutline.courseOutline).find(key => key === topic.trim());
+            topicId = Object.keys(currentOutline.courseOutline).find(key => currentOutline.courseOutline[key].topic.trim() === topic.trim());
             subTopicId = currentOutline.courseOutline[topicId].details.findIndex(detail => Object.values(detail)[0].trim() === subtopic.trim());
             subTopicId = `${topicId}.${subTopicId + 1}`;
           } else {
@@ -246,8 +219,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
             CourseId: currentOutline.courseId,
             TopicId: topicId,
             SubTopicId: subTopicId,
-            Message: text,
-            model: 'gemma2b'
+            Message: text
           };
       
           console.log('Sending request to AI:', requestData);
@@ -255,7 +227,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
           await saveConversation('user', text, currentOutline.courseId, topicId, subTopicId);
       
           setIsAIResponding(true);
-          const response = await axios.post(`${backendBaseUrl}/aiGen/answerUserQuestion`, requestData);
+          const response = await axios.post('http://localhost:5000/aiGen/answerUserQuestion', requestData);
           setIsAIResponding(false);
       
           console.log('AI response:', response.data);
@@ -295,7 +267,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
       
           console.log("Payload being sent to server:", payload);
       
-          const response = await axios.post(`${backendBaseUrl}/quiz/calQuizResult`, payload);
+          const response = await axios.post('http://localhost:5000/quiz/calQuizResult', payload);
       
           console.log('Full response from server:', response);
       
@@ -346,7 +318,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
 
           console.log('Updated outline for isCompleted:', updatedOutline);
 
-          await axios.post(`${backendBaseUrl}/courseOutline/updateLearningStatus`, {
+          await axios.post('http://localhost:5000/courseOutline/updateLearningStatus', {
             WalletAddress: walletAddress,
             CourseId: outline.courseId,
             TopicId: topicKey,
@@ -371,7 +343,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
           ConversationTimestamp: Math.floor(Date.now() / 1000)
         };
         try {
-          await axios.post(`${backendBaseUrl}/conversation/saveSingleEduConversation`, payload);
+          await axios.post('http://localhost:5000/conversation/saveSingleEduConversation', payload);
         } catch (error) {
           console.error('Error saving conversation:', error);
         }
@@ -382,7 +354,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
         setQuizAnswers({});
         setIsQuizGenerating(true);
         try {
-          const response = await axios.post(`${backendBaseUrl}/aiGen/generateQuiz`, {
+          const response = await axios.post('http://localhost:5000/aiGen/generateQuiz', {
             WalletAddress: walletAddress,
             CourseId: outline.courseId,
             TopicId: topicKey,
@@ -526,17 +498,13 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
                 <ChatWindow messages={messages} />
                 {isAIResponding && (
                     <Box display="flex" justifyContent="center" alignItems="center" p={2}>
-                        {isAIResponding && (
                         <LoadingIndicator>
                             <StyledCircularProgress size={20} />
                             <Typography ml={2}>AI is thinking...</Typography>
                         </LoadingIndicator>
-                        )}
                     </Box>
                 )}
-                {started ? (
-                    <MessageInput onSendMessage={(text) => handleSendMessage(text)} />
-                ) : (
+                {courseLoaded && !started ? (
                     <Button 
                         onClick={handleStartLearning}
                         variant="contained"
@@ -544,108 +512,112 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, initialMessag
                     >
                         Start to learn
                     </Button>
+                ) : started ? (
+                    <MessageInput onSendMessage={(text) => handleSendMessage(text)} />
+                ) : null}
+            </Box>
+            {started && (
+                <Box width={400} bgcolor="#1a2f26" color="#ffffff" p={2} overflow="auto">
+                    <TextField 
+                        fullWidth 
+                        variant="outlined" 
+                        placeholder="Search topics..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        sx={{ 
+                            mb: 2,
+                            '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                                borderColor: '#ffffff',
+                            },
+                            '&:hover fieldset': {
+                                borderColor: '#ffffff',
+                            },
+                            '&.Mui-focused fieldset': {
+                                borderColor: '#ffffff',
+                            },
+                            },
+                            '& .MuiInputBase-input': {
+                            color: '#ffffff',
+                            },
+                            '& .MuiInputLabel-root': {
+                            color: '#ffffff',
+                            },
+                        }}
+                    />
+                    <LinearProgress variant="determinate" value={progress} sx={{ mb: 2 }} />
+                    <Typography variant="subtitle1" gutterBottom color="#EBE3D5" fontSize={"28px"} >Course Outline</Typography>
+                    <List>
+                        {filteredOutline && filteredOutline.length > 0 ? (
+                            filteredOutline.map(([topicKey, topicValue]) => (
+                                <React.Fragment key={topicKey}>
+                                    <ListItem>
+                                        <ListItemText primary={topicValue.topic} />
+                                    </ListItem>
+                                    <List component="div" disablePadding>
+                                        {topicValue.details && topicValue.details.map((subtopic, index) => {
+                                            const subtopicKey = Object.keys(subtopic)[0];
+                                            const subtopicContent = subtopic[subtopicKey];
+                                            return (
+                                                <ListItem key={subtopicKey} sx={{ pl: 4 }}>
+                                                    <ListItemIcon>
+                                                    <Checkbox
+                                                      edge="start"
+                                                      checked={subtopic.isCompleted || false}
+                                                      onChange={() => handleCheckboxChange(topicKey, subtopicKey)}
+                                                      sx={{
+                                                        color: '#ffffff',
+                                                        '&.Mui-checked': {
+                                                          color: '#ffffff',
+                                                        }
+                                                      }}
+                                                    />
+                                                    </ListItemIcon>
+                                                    <ListItemText 
+                                                        primary={subtopicKey} 
+                                                        secondary={subtopicContent}
+                                                        onClick={() => handleSubtitleClick(topicKey, subtopicKey)}
+                                                        sx={{ 
+                                                            cursor: 'pointer',
+                                                            '& .MuiListItemText-primary': {
+                                                            color: '#ffffff',
+                                                            },
+                                                            '& .MuiListItemText-secondary': {
+                                                            color: '#ffffff',
+                                                            },
+                                                        }}
+                                                    />
+                                                    <Button 
+                                                        onClick={() => handleQuizClick(topicKey, subtopicKey)}
+                                                        sx={{
+                                                            backgroundColor: '#6B8A7A',
+                                                            color: '#ffffff',
+                                                            '&:hover': {
+                                                            backgroundColor: '#5A7A6A',
+                                                            },
+                                                        }}
+                                                    >
+                                                        Quiz
+                                                    </Button>
+                                                </ListItem>
+                                            );
+                                        })}
+                                    </List>
+                                </React.Fragment>
+                            ))
+                        ) : (
+                            <ListItem>
+                                <ListItemText 
+                                    primary="No course outline available or no matches found." 
+                                    sx={{ 
+                                        color: '#ffffff',
+                                    }}
+                                />
+                            </ListItem>
+                        )}
+                    </List>
+                  </Box>
                 )}
-            </Box>
-            <Box width={400} bgcolor="#1a2f26" color="#ffffff" p={2} overflow="auto">
-                <TextField 
-                    fullWidth 
-                    variant="outlined" 
-                    placeholder="Search topics..." 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    sx={{ 
-                        mb: 2,
-                        '& .MuiOutlinedInput-root': {
-                        '& fieldset': {
-                            borderColor: '#ffffff',
-                        },
-                        '&:hover fieldset': {
-                            borderColor: '#ffffff',
-                        },
-                        '&.Mui-focused fieldset': {
-                            borderColor: '#ffffff',
-                        },
-                        },
-                        '& .MuiInputBase-input': {
-                        color: '#ffffff',
-                        },
-                        '& .MuiInputLabel-root': {
-                        color: '#ffffff',
-                        },
-                    }}
-                />
-                <LinearProgress variant="determinate" value={progress} sx={{ mb: 2 }} />
-                <Typography variant="subtitle1" gutterBottom color="#EBE3D5" fontSize={"28px"} >Course Outline</Typography>
-                <List>
-                    {filteredOutline && filteredOutline.length > 0 ? (
-                        filteredOutline.map(([topicKey, topicValue]) => (
-                            <React.Fragment key={topicKey}>
-                                <ListItem>
-                                    <ListItemText primary={topicValue.topic} />
-                                </ListItem>
-                                <List component="div" disablePadding>
-                                    {topicValue.details && topicValue.details.map((subtopic, index) => {
-                                        const subtopicKey = Object.keys(subtopic)[0];
-                                        const subtopicContent = subtopic[subtopicKey];
-                                        return (
-                                            <ListItem key={subtopicKey} sx={{ pl: 4 }}>
-                                                <ListItemIcon>
-                                                <Checkbox
-                                                  edge="start"
-                                                  checked={subtopic.isCompleted || false}
-                                                  onChange={() => handleCheckboxChange(topicKey, subtopicKey)}
-                                                  sx={{
-                                                    color: '#ffffff',
-                                                    '&.Mui-checked': {
-                                                      color: '#ffffff',
-                                                    }
-                                                  }}
-                                                />
-                                                </ListItemIcon>
-                                                <ListItemText 
-                                                    primary={subtopicKey} 
-                                                    secondary={subtopicContent}
-                                                    onClick={() => handleSubtitleClick(topicKey, subtopicKey)}
-                                                    sx={{ 
-                                                        cursor: 'pointer',
-                                                        '& .MuiListItemText-primary': {
-                                                        color: '#ffffff',
-                                                        },
-                                                        '& .MuiListItemText-secondary': {
-                                                        color: '#ffffff',
-                                                        },
-                                                    }}
-                                                />
-                                                <Button 
-                                                    onClick={() => handleQuizClick(topicKey, subtopicKey)}
-                                                    sx={{
-                                                        backgroundColor: '#6B8A7A',
-                                                        color: '#ffffff',
-                                                        '&:hover': {
-                                                        backgroundColor: '#5A7A6A',
-                                                        },
-                                                    }}
-                                                >
-                                                    Quiz
-                                                </Button>
-                                            </ListItem>
-                                        );
-                                    })}
-                                </List>
-                            </React.Fragment>
-                        ))
-                    ) : (
-                        <ListItem>
-                            <ListItemText 
-                                primary="No course outline available or no matches found." 
-                                sx={{ 
-                                    color: '#ffffff',
-                                }}
-                            />
-                        </ListItem>
-                    )}
-                </List>
-            </Box>
             <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
                 <DialogTitle>Start this subtopic?</DialogTitle>
                 <DialogContent>

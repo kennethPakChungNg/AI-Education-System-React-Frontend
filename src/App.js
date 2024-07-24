@@ -294,21 +294,38 @@ function AppContent() {
     setActiveComponent('SuggestedCourse');
   };
 
-  const handleStartLearning = async (courseName, courseOutline) => {
+  const handleStartLearning = async (courseName, courseOutline, isNew = false) => {
+    setIsNewCourse(isNew);
     try {
-      const response = await axios.post(`${backendBaseUrl}/courseOutline/saveCourseOutline`, {
+      const formattedOutline = Object.entries(courseOutline).reduce((acc, [topicKey, topicValue]) => {
+        acc[topicKey] = {
+          ...topicValue,
+          details: topicValue.details.map(detail => {
+            const subtopicKey = Object.keys(detail)[0];
+            return {
+              [subtopicKey]: detail[subtopicKey],
+              isCompleted: detail.isCompleted !== undefined ? detail.isCompleted : false
+            };
+          })
+        };
+        return acc;
+      }, {});
+  
+      const response = await axios.post('http://localhost:5000/courseOutline/saveCourseOutline', {
         WalletAddress: address,
         courseName: courseName,
-        courseOutline: courseOutline
+        courseOutline: formattedOutline
       });
-  
+      console.log('response:', response);
       if (response.data && response.data.data && response.data.data.courseId) {
         setSuggestedCourseInfo({ 
           title: courseName, 
-          outline: courseOutline,
+          outline: formattedOutline,
           courseId: response.data.data.courseId
         });
+        
         setActiveComponent('SuggestedCourse');
+        console.log('Setting active component to SuggestedCourse');
         if (sidebarRef.current && sidebarRef.current.fetchCourseHistory) {
           sidebarRef.current.fetchCourseHistory();
         }

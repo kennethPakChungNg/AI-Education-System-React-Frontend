@@ -16,7 +16,6 @@ import smartContractIcon from '../assets/icons/smart-contracts.png';
 import AddIcon from '@mui/icons-material/Add';
 import startLearningIcon from '../assets/icons/start_to_learn.png';
 import instructionBackground from '../assets/images/instruction_background.jpg';
-import { backendBaseUrl } from '../serverConfig';
 
 const StyledButtonGroup = styled(ButtonGroup)({
   '& .MuiButtonGroup-grouped': {
@@ -69,7 +68,7 @@ function Home({ onStartLearning }) {
   useEffect(() => {
     const fetchCourseOutlines = async () => {
       try {
-        const response = await axios.get(`${backendBaseUrl}/courseOutline/suggestedCourseOutlines`);
+        const response = await axios.get('http://localhost:5000/courseOutline/suggestedCourseOutlines');
         if (response.data && response.data.data) {
           setCourseOutlines(response.data.data);
         } else {
@@ -137,7 +136,7 @@ function Home({ onStartLearning }) {
         <CardActions style={{ width: '100%', margin: '20px 920px' }}>
           <Button 
             className="start-learning-btn"
-            onClick={() => onStartLearning(activeTab, outlineContent)}
+            onClick={() => onStartLearning(activeTab, outlineContent, true)}
             startIcon={<img src={startLearningIcon} alt="Start to learn" style={{ width: 24, height: 24 }} />}
             variant="contained"
             color="primary"
@@ -187,15 +186,7 @@ function Home({ onStartLearning }) {
             Speed Your Learning By AI
           </Typography>
           <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', marginTop: 2 , fontFamily: 'Libre Baskerville, sans-serif', paddingTop: '30px', marginLeft: '3px'}}>
-            Choose the pre-defined course below to begin
-          </Typography>
-          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', marginTop: 2 , fontFamily: 'Libre Baskerville, sans-serif', fontWeight: 'bold', paddingTop: '10px', marginLeft: '200px'}}>
-            OR
-          </Typography>
-          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', marginTop: 2, fontFamily: 'Libre Baskerville, sans-serif', paddingTop: '10px', marginLeft: '3px'}}>
-            Press 
-            <AddIcon sx={{ marginLeft: '5px', marginRight: '5px', color: '#152621' }} />
-            in sidebar to create your new course.
+            Traditional Education System Will Be Changed By AI.
           </Typography>
         </CardContent>
       </Card>
@@ -203,6 +194,19 @@ function Home({ onStartLearning }) {
         <Container maxWidth="lg">
           <Typography variant="h3" sx={{ fontFamily: 'Libre Baskerville Bold, sans-serif', fontSize: '45px', paddingBottom:'20px', color: '#111111' }}>
             Course Suggestions
+          </Typography>
+          <Typography variant="h6" 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              fontFamily: 'Libre Baskerville, sans-serif', 
+              paddingTop: '0px', 
+              marginLeft: '5px',
+              marginBottom: '10px',
+              }}>
+            Choose the pre-defined course below to begin OR Press 
+            <AddIcon sx={{ marginLeft: '5px', marginRight: '5px', color: '#152621' }} />
+            in sidebar to create your new course.
           </Typography>
           <StyledButtonGroup variant="contained" aria-label="course selection button group">
             {tabs.map((tab) => (

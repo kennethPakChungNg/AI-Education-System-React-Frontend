@@ -149,7 +149,7 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
                 input: { color: 'white' }
               }}
             />
-            <Button variant="contained" onClick={() => {
+            <Button variant="contained" size="small" onClick={() => {
               onGenerateCourseOutline(topic);
               setTopic('');
             }}>
@@ -170,13 +170,13 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
                 input: { color: 'white' }
               }}
             />
-            <Button variant="contained" onClick={() => {
+            <Button variant="contained" size="small" onClick={() => {
               onModifyCourseOutline(modification);
               setModification('');
             }}>
               Modify Course Outline
             </Button>
-            <Button variant="contained" onClick={() => setSaveDialogOpen(true)}>
+            <Button variant="contained" size="small" onClick={() => setSaveDialogOpen(true)}>
               Start With Course Outline
             </Button>
           </Box>
