@@ -29,7 +29,7 @@ function MessageInput({ onSendMessage, initialText = '' }) {
   };
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', padding: 2, backgroundColor: '#9EB384'}}>
+    <Box sx={{ display: 'flex', alignItems: 'center', padding: 2, backgroundColor: '#f1f8e8'}}>
       <TextField
         fullWidth
         multiline
@@ -66,25 +66,25 @@ function MessageInput({ onSendMessage, initialText = '' }) {
           onChange={(e) => setWithImage(e.target.value === 'with')}
           sx={{
             '& .MuiFormControlLabel-root': {
-              color: '#ffffff',
+              color: '#776B5D',
               marginRight: 0,
             },
             '& .MuiRadio-root': {
-              color: '#ffffff',
+              color: '#776B5D',
             },
             '& .MuiRadio-root.Mui-checked': {
-              color: '#ffffff',
+              color: '#776B5D',
             },
           }}
         >
           <FormControlLabel
             value="with"
-            control={<Radio sx={{ color: '#ffffff', '&.Mui-checked': { color: '#ffffff' } }} />}
+            control={<Radio sx={{ color: '#776B5D', '&.Mui-checked': { color: '#776B5D' } }} />}
             label="With Image"
           />
           <FormControlLabel
             value="without"
-            control={<Radio sx={{ color: '#ffffff', '&.Mui-checked': { color: '#ffffff' } }} />}
+            control={<Radio sx={{ color: '#776B5D', '&.Mui-checked': { color: '#776B5D' } }} />}
             label="Without Image"
           />
         </RadioGroup>

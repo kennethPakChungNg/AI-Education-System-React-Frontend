@@ -3,7 +3,6 @@ import { Box, Paper, TextField, Button, Typography, Dialog, DialogTitle, DialogC
 import Message from './Message';
 import MessageInput from './MessageInput';
 import axios from 'axios';
-import { backendBaseUrl } from '../serverConfig';
 
 function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseState, onGenerateCourseOutline, onModifyCourseOutline, onStartWithCourseOutline, address }) {
   const [topic, setTopic] = useState('');
@@ -20,6 +19,10 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
   };
 
   useEffect(scrollToBottom, [messages]);
+
+  useEffect(() => {
+    console.log('Current newCourseState:', newCourseState);
+  }, [newCourseState]);
 
   // Formatting the AI response
   const formatAIResponse = (text) => {
@@ -44,75 +47,45 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
   };
 
   const handleSendMessage = async (text, withImage) => {
-    console.log('Sending message:', text);
-    if (newCourseState === 'learning') {
-      try {
-        const textResponse = await axios.post(`${backendBaseUrl}/aiGen/answerUserQuestion`, {
+    try {
+      const newMessage = { id: messages.length + 1, text, sender: 'user' };
+      setMessages(prevMessages => [...prevMessages, newMessage]);
+
+      const textResponse = await axios.post('http://localhost:5000/aiGen/answerUserQuestion', {
+        WalletAddress: address,
+        CourseId: courseId,
+        TopicId: currentTopicId,
+        SubTopicId: currentSubTopicId,
+        Message: text
+      });
+
+      let imageResponse = null;
+      if (withImage) {
+        imageResponse = await axios.post('http://localhost:5000/aiGen/genEducateImage', {
           WalletAddress: address,
           CourseId: courseId,
           TopicId: currentTopicId,
           SubTopicId: currentSubTopicId,
           Message: text
         });
-  
-        console.log('AI response:', textResponse.data.data);
-  
-        let imageResponse = null;
-        if (withImage) {
-          try {
-            imageResponse = await axios.post(`${backendBaseUrl}/aiGen/genEducateImage`, {
-              WalletAddress: address,
-              CourseId: courseId,
-              TopicId: currentTopicId,
-              SubTopicId: currentSubTopicId,
-              Message: text
-            });
-          } catch (imageError) {
-            console.error('Error generating image:', imageError);
-          }
-        }
-  
-        // Update messages state with formatted AI response
-        setMessages(prev => [
-          ...prev,
-          { id: prev.length + 1, text: text, sender: 'user' },
-          { 
-            id: prev.length + 2, 
-            text: formatAIResponse(textResponse.data.data), // Format the AI response
-            sender: 'ai',
-            image: imageResponse && imageResponse.data ? imageResponse.data.data : null
-          }
-        ]);
-  
-        // Save conversation (use original unformatted response for saving)
-        await axios.post(`${backendBaseUrl}/conversation/saveSingleEduConversation`, {
-          WalletAddress: address,
-          CourseId: courseId,
-          TopicId: currentTopicId,
-          SubTopicId: currentSubTopicId,
-          Role: 'user',
-          Message: text,
-          ConversationTimestamp: Math.floor(Date.now() / 1000)
-        });
-  
-        await axios.post(`${backendBaseUrl}/conversation/saveSingleEduConversation`, {
-          WalletAddress: address,
-          CourseId: courseId,
-          TopicId: currentTopicId,
-          SubTopicId: currentSubTopicId,
-          Role: 'system',
-          Message: textResponse.data.data, // Save original unformatted response
-          ConversationTimestamp: Math.floor(Date.now() / 1000)
-        });
-  
-      } catch (error) {
-        console.error('Error sending message:', error);
       }
+
+      const aiMessage = {
+        id: messages.length + 2,
+        text: textResponse.data.data,
+        sender: 'ai',
+        image: imageResponse ? imageResponse.data.data : null
+      };
+      setMessages(prevMessages => [...prevMessages, aiMessage]);
+
+    } catch (error) {
+      console.error('Error sending message:', error);
     }
   };
 
   return (
     <Box display="flex" flexDirection="column" height="100%">
+    {console.log('Rendering NewCourseWindow, newCourseState:', newCourseState)}
       <Paper 
         elevation={3} 
         sx={{ 
@@ -135,9 +108,9 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
           <div ref={messagesEndRef} />
         </Box>
       </Paper>
-      <Box sx={{ p: 2, backgroundColor: '#1a2f26' }}>
+      <Box sx={{ p: 2, backgroundColor: '#f1f8e8' }}>
         {newCourseState === 'initial' && (
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', gap: 2, height: '55px'}}>
             <TextField
               fullWidth
               variant="outlined"
@@ -146,10 +119,17 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
               placeholder="Enter the topic you want to learn"
               sx={{ 
                 backgroundColor: '#254336',
-                input: { color: 'white' }
+                input: { color: 'white' }, 
+                borderRadius: '5px'
               }}
+              
             />
-            <Button variant="contained" size="small" onClick={() => {
+            <Button variant="contained" 
+              size="small" 
+              sx={{
+                backgroundColor: '#6b8a7a',
+              }}  
+              onClick={() => {
               onGenerateCourseOutline(topic);
               setTopic('');
             }}>
@@ -170,18 +150,27 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
                 input: { color: 'white' }
               }}
             />
-            <Button variant="contained" size="small" onClick={() => {
+            <Button variant="contained" size="small" 
+              sx={{
+                backgroundColor: '#6b8a7a',
+              }} 
+              onClick={() => {
               onModifyCourseOutline(modification);
               setModification('');
             }}>
               Modify Course Outline
             </Button>
-            <Button variant="contained" size="small" onClick={() => setSaveDialogOpen(true)}>
+            <Button variant="contained" size="small" 
+              sx={{
+                backgroundColor: '#6b8a7a',
+              }} 
+              onClick={() => setSaveDialogOpen(true)}
+            >
               Start With Course Outline
             </Button>
           </Box>
         )}
-        {newCourseState === 'learning' && (
+        {(newCourseState === 'learning' || newCourseState === 'outline-generated') && (
           <MessageInput onSendMessage={handleSendMessage} />
         )}
       </Box>
