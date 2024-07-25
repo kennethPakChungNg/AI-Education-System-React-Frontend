@@ -284,6 +284,12 @@ function AppContent() {
 
   const handleNewCourseClick = () => {
     setActiveComponent('ChatWindow');
+    setNewCourseState('initial'); 
+    setIsNewCourse(true);  // Add this line
+    setNewCourseMessages([  // Reset newCourseMessages
+      { id: 1, text: "Welcome! I'm your AI teacher.", sender: 'ai' },
+      { id: 2, text: "What topic would you like to learn about? I'll create a customized course outline for you.", sender: 'ai' },
+    ]);
   };
 
   const handleUserProfileClick = () => {
@@ -428,20 +434,16 @@ function AppContent() {
         {activeComponent === 'ChatWindow' && (
           <Box display="flex" height="100vh">
             <Box flex={1} display="flex" flexDirection="column">
-              {isNewCourse ? (
-                <NewCourseWindow 
-                  messages={newCourseMessages}
-                  setMessages={setNewCourseMessages}
-                  newCourseState={newCourseState}
-                  setNewCourseState={setNewCourseState}
-                  onGenerateCourseOutline={handleGenerateCourseOutline}
-                  onModifyCourseOutline={handleModifyCourseOutline}
-                  onStartWithCourseOutline={handleStartWithCourseOutline}
-                  address={address}
-                />
-              ) : (
-                <ChatWindow messages={messages} />
-              )}
+              <NewCourseWindow 
+                messages={newCourseMessages}
+                setMessages={setNewCourseMessages}
+                newCourseState={newCourseState}
+                setNewCourseState={setNewCourseState}
+                onGenerateCourseOutline={handleGenerateCourseOutline}
+                onModifyCourseOutline={handleModifyCourseOutline}
+                onStartWithCourseOutline={handleStartWithCourseOutline}
+                address={address}
+              />
             </Box>
             {showCourseOutline && newCourseOutline && (
               <CourseOutlineDisplay 
