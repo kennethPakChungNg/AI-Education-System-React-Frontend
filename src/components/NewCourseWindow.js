@@ -1,9 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Paper, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Paper, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, CircularProgress } from '@mui/material';
 import Message from './Message';
 import MessageInput from './MessageInput';
 import axios from 'axios';
 import { styled } from '@mui/material/styles';
+
+const LoadingIndicator = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  padding: theme.spacing(2),
+  color: '#ffffff',
+  backgroundColor: '#1a2f26',
+}));
+
+const StyledCircularProgress = styled(CircularProgress)({
+  color: '#6B8A7A',
+});
 
 const ScrollableBox = styled(Box)(({ theme }) => ({
   overflowY: 'auto',
@@ -33,6 +46,7 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
   const [courseId, setCourseId] = useState(null);
   const [currentTopicId, setCurrentTopicId] = useState(null);
   const [currentSubTopicId, setCurrentSubTopicId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -44,10 +58,30 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
     console.log('Current newCourseState:', newCourseState);
   }, [newCourseState]);
 
+
+  const saveConversation = async (role, message, courseId, topicId, subTopicId) => {
+    const payload = {
+      WalletAddress: address,
+      CourseId: courseId,
+      TopicId: topicId,
+      SubTopicId: subTopicId,
+      Role: role,
+      Message: message,
+      ConversationTimestamp: Math.floor(Date.now() / 1000)
+    };
+    try {
+      await axios.post('http://localhost:5000/conversation/saveSingleEduConversation', payload);
+    } catch (error) {
+      console.error('Error saving conversation:', error);
+    }
+  };
+
   // Formatting the AI response
   const formatAIResponse = (text) => {
-    text = text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-    text = text.replace(/^-\s*/gm, '');
+    // Remove asterisks
+    text = text.replace(/\*\*(.*?)\*\*/g, '$1');
+    
+    // Split into sections
     const sections = text.split('###').filter(section => section.trim() !== '');
     
     const formattedSections = sections.map(section => {
@@ -60,17 +94,24 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
         .replace(/([A-Z][^.!?]+[.!?])\s/g, '$1<br><br>')
         .replace(/(-\s)/g, '<br>• ');
       
-      return `<h3 class="ai-response-title">${title}</h3>\n${formattedContent}`;
+      return `<h3 style="color: #FFD700; margin-bottom: 10px;">${title}</h3>\n${formattedContent}`;
     });
     
-    return formattedSections.join('\n\n');
+    return formattedSections.join('<br><br>');
   };
 
   const handleSendMessage = async (text, withImage) => {
+    setIsLoading(true);
     try {
+      console.log('handle send message in NewCourseWindow.js');
       const newMessage = { id: messages.length + 1, text, sender: 'user' };
       setMessages(prevMessages => [...prevMessages, newMessage]);
-
+      
+      console.log('Sending message:', text);
+  
+      // Save user message
+      await saveConversation('user', text, courseId, currentTopicId, currentSubTopicId);
+  
       const textResponse = await axios.post('http://localhost:5000/aiGen/answerUserQuestion', {
         WalletAddress: address,
         CourseId: courseId,
@@ -78,7 +119,9 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
         SubTopicId: currentSubTopicId,
         Message: text
       });
-
+  
+      console.log('AI response:', textResponse.data.data);
+  
       let imageResponse = null;
       if (withImage) {
         imageResponse = await axios.post('http://localhost:5000/aiGen/genEducateImage', {
@@ -89,7 +132,9 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
           Message: text
         });
       }
-
+  
+      console.log('AI image response:', imageResponse ? imageResponse.data.data : null);
+  
       const aiMessage = {
         id: messages.length + 2,
         text: textResponse.data.data,
@@ -97,15 +142,21 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
         image: imageResponse ? imageResponse.data.data : null
       };
       setMessages(prevMessages => [...prevMessages, aiMessage]);
-
+  
+      // Save AI response
+      await saveConversation('system', textResponse.data.data, courseId, currentTopicId, currentSubTopicId);
+  
+      console.log('AI response formatted:', formatAIResponse(textResponse.data.data));
+  
     } catch (error) {
       console.error('Error sending message:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <Box display="flex" flexDirection="column" height="100%">
-      {console.log('Rendering NewCourseWindow, newCourseState:', newCourseState)}
       <Paper 
         elevation={3} 
         sx={{ 
@@ -189,6 +240,14 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
             </Button>
           </Box>
         )}
+        {isLoading && (
+          <Box display="flex" justifyContent="center" alignItems="center" p={2}>
+            <LoadingIndicator sx={{ backgroundColor: '#6b8a7a', color: '#ffffff' }}>
+              <StyledCircularProgress sx={{ backgroundColor: '#6b8a7a', color: '#ffffff' }} size={20} />
+              <Typography ml={2}>AI is thinking...</Typography>
+            </LoadingIndicator>
+          </Box>
+        )}
         {newCourseState === 'learning' && (
           <MessageInput onSendMessage={handleSendMessage} />
         )}
@@ -210,11 +269,22 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
         <DialogActions>
           <Button onClick={() => setSaveDialogOpen(false)}>Cancel</Button>
           <Button onClick={() => {
-            onStartWithCourseOutline(courseName, (newCourseId, firstTopic, firstSubtopic) => {
+            onStartWithCourseOutline(courseName, async (newCourseId, firstTopic, firstSubtopic) => {
               setCourseId(newCourseId);
               setCurrentTopicId(firstTopic);
               setCurrentSubTopicId(firstSubtopic);
               setNewCourseState('learning');
+
+              // Save initial AI message
+              const initialMessage = `Welcome to ${courseName} course! I'll be your AI teacher for this course. Let's begin with the course outline.`;
+              await saveConversation('system', initialMessage, newCourseId, firstTopic, firstSubtopic);
+
+              // Add initial AI message to the messages state
+              setMessages(prevMessages => [...prevMessages, {
+                id: prevMessages.length + 1,
+                text: initialMessage,
+                sender: 'ai'
+              }]);
             });
             setSaveDialogOpen(false);
           }}>Save</Button>
