@@ -122,31 +122,33 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
   
       console.log('AI response:', textResponse.data.data);
   
-      let imageResponse = null;
+      let imageData = null;
       if (withImage) {
-        imageResponse = await axios.post('http://localhost:5000/aiGen/genEducateImage', {
-          WalletAddress: address,
-          CourseId: courseId,
-          TopicId: currentTopicId,
-          SubTopicId: currentSubTopicId,
-          Message: text
-        });
+        try {
+          const imageResponse = await axios.post('http://localhost:5000/aiGen/genEducateImage', {
+            WalletAddress: address,
+            CourseId: courseId,
+            TopicId: currentTopicId,
+            SubTopicId: currentSubTopicId,
+            Message: text
+          });
+          imageData = imageResponse.data.data.images[0];  // Assuming the image is in this format
+          console.log('AI image response:', imageData);
+        } catch (imageError) {
+          console.error('Error generating image:', imageError);
+        }
       }
-  
-      console.log('AI image response:', imageResponse ? imageResponse.data.data : null);
   
       const aiMessage = {
         id: messages.length + 2,
-        text: textResponse.data.data,
+        text: formatAIResponse(textResponse.data.data),
         sender: 'ai',
-        image: imageResponse ? imageResponse.data.data : null
+        image: imageData
       };
       setMessages(prevMessages => [...prevMessages, aiMessage]);
   
       // Save AI response
       await saveConversation('system', textResponse.data.data, courseId, currentTopicId, currentSubTopicId);
-  
-      console.log('AI response formatted:', formatAIResponse(textResponse.data.data));
   
     } catch (error) {
       console.error('Error sending message:', error);

@@ -564,6 +564,7 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, walletAddress
                   />
                   <LinearProgress variant="determinate" value={progress} sx={{ mb: 2 }} />
                   <Typography variant="subtitle1" gutterBottom color="#EBE3D5" fontSize={"28px"} >Course Outline</Typography>
+                  <hr/>
                   <List>
                       {filteredOutline && filteredOutline.length > 0 ? (
                           filteredOutline.map(([topicKey, topicValue]) => (

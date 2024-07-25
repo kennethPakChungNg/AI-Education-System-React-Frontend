@@ -1,10 +1,10 @@
 import React from 'react';
-import { Paper, Typography, Box } from '@mui/material';
+import { Paper, Box } from '@mui/material';
 
-function Message({ text, sender, style }) {
+function Message({ text, sender, image, style }) {
   const backgroundColor = sender === 'user' ? '#3AA6B9' : '#6B8A7A';
   const fontColor = sender === 'user' ? '#FFD0D0' : '#ffffff';
-  const fontFamily = sender === 'user' ? 'Libre Baskerville' : 'Libre Baskerville';
+  const fontFamily = 'Libre Baskerville';
 
   return (
     <Box
@@ -25,8 +25,8 @@ function Message({ text, sender, style }) {
           color: fontColor,
         }}
       >
-        <Typography 
-          variant="body1" 
+        <div 
+          className={`message-content ${sender}`}
           style={{
             ...style, 
             fontFamily: fontFamily, 
@@ -35,6 +35,21 @@ function Message({ text, sender, style }) {
           }}
           dangerouslySetInnerHTML={{ __html: text }}
         />
+        {image && (
+          <Box mt={2} sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <img 
+              src={`data:image/png;base64,${image}`} 
+              alt="Generated" 
+              style={{ 
+                maxWidth: '100%', 
+                height: 'auto', 
+                maxHeight: '512px',
+                objectFit: 'contain',
+                borderRadius: '10px'
+              }} 
+            />
+          </Box>
+        )}
       </Paper>
     </Box>
   );

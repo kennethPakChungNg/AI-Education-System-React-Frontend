@@ -29,7 +29,7 @@ function MessageInput({ onSendMessage, initialText = '' }) {
   };
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', padding: 2, backgroundColor: '#f1f8e8'}}>
+    <Box sx={{ display: 'flex', alignItems: 'center', backgroundColor: '#f1f8e8'}}>
       <TextField
         fullWidth
         multiline
@@ -59,7 +59,14 @@ function MessageInput({ onSendMessage, initialText = '' }) {
           },
         }}
       />
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginLeft: 1 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: 'center', 
+        marginLeft: 1, 
+        marginRight: 1, 
+        height: '100%'
+      }}>
         <RadioGroup
           row
           value={withImage ? 'with' : 'without'}
