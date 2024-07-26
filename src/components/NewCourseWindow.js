@@ -70,7 +70,7 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
       ConversationTimestamp: Math.floor(Date.now() / 1000)
     };
     try {
-      await axios.post('http://localhost:5000/conversation/saveSingleEduConversation', payload);
+      await axios.post(`${backendBaseUrl}/conversation/saveSingleEduConversation`, payload);
     } catch (error) {
       console.error('Error saving conversation:', error);
     }
@@ -112,7 +112,7 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
       // Save user message
       await saveConversation('user', text, courseId, currentTopicId, currentSubTopicId);
   
-      const textResponse = await axios.post('http://localhost:5000/aiGen/answerUserQuestion', {
+      const textResponse = await axios.post(`${backendBaseUrl}/aiGen/answerUserQuestion`, {
         WalletAddress: address,
         CourseId: courseId,
         TopicId: currentTopicId,
@@ -125,7 +125,7 @@ function NewCourseWindow({ messages, setMessages, newCourseState, setNewCourseSt
       let imageData = null;
       if (withImage) {
         try {
-          const imageResponse = await axios.post('http://localhost:5000/aiGen/genEducateImage', {
+          const imageResponse = await axios.post(`${backendBaseUrl}/aiGen/genEducateImage`, {
             WalletAddress: address,
             CourseId: courseId,
             TopicId: currentTopicId,
