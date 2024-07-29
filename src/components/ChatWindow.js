@@ -47,6 +47,7 @@ function ChatWindow({ messages }) {
             key={msg.id} 
             text={msg.text} 
             sender={msg.sender} 
+            image={msg.image}
             style={msg.text.startsWith('Blockchain 101 Course Outline:') || 
                   msg.text.startsWith('NFT Course Outline:') ||
                   msg.text.startsWith('Crypto Wallet Course Outline:') ||

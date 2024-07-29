@@ -7,6 +7,28 @@ import axios from 'axios';
 import ChatWindow from './ChatWindow';
 import MessageInput from './MessageInput';
 import { backendBaseUrl } from '../serverConfig';
+import { styled } from '@mui/material/styles';
+
+const ScrollableOutline = styled(Box)(({ theme }) => ({
+  flexGrow: 1,
+  overflowY: 'auto',
+  '&::-webkit-scrollbar': {
+    width: '8px',
+  },
+  '&::-webkit-scrollbar-track': {
+    background: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: '4px',
+  },
+  '&::-webkit-scrollbar-thumb': {
+    background: '#6B8A7A',
+    borderRadius: '4px',
+    '&:hover': {
+      background: '#5A7A6A',
+    },
+  },
+  scrollbarWidth: 'thin',
+  scrollbarColor: '#6B8A7A rgba(255, 255, 255, 0.1)',
+}));
 
 const LoadingIndicator = styled(Box)(({ theme }) => ({
   display: 'flex',
@@ -183,68 +205,81 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, walletAddress
 
 
     //Handle message between user and chatgpt api
-    const handleSendMessage = async (text, outlineParam = null) => {
-        console.log('handleSendMessage called with text:', text);
-        const currentOutline = outlineParam || outline;
-        console.log('Current outline:', currentOutline);
-      
-        const newMessage = {
-          id: messages.length + 1,
-          text: text,
-          sender: 'user',
-        };
-        setMessages(prevMessages => [...prevMessages, newMessage]);
-      
-        try {
-          if (!currentOutline || !currentOutline.courseOutline) {
-            console.error('Course outline is not properly loaded', currentOutline);
-            return;
-          }
-      
-          let topicId, subTopicId;
-          const match = text.match(/"([^:]+): ([^"]+)"/);
-          if (match) {
-            const [, topic, subtopic] = match;
-            topicId = Object.keys(currentOutline.courseOutline).find(key => currentOutline.courseOutline[key].topic.trim() === topic.trim());
-            subTopicId = currentOutline.courseOutline[topicId].details.findIndex(detail => Object.values(detail)[0].trim() === subtopic.trim());
-            subTopicId = `${topicId}.${subTopicId + 1}`;
-          } else {
-            topicId = Object.keys(currentOutline.courseOutline)[0];
-            subTopicId = 'A.1';
-          }
-      
-          console.log('Resolved topicId:', topicId, 'subTopicId:', subTopicId);
-      
-          const requestData = {
-            WalletAddress: walletAddress,
-            CourseId: currentOutline.courseId,
-            TopicId: topicId,
-            SubTopicId: subTopicId,
-            Message: text
-          };
-      
-          console.log('Sending request to AI:', requestData);
-      
-          await saveConversation('user', text, currentOutline.courseId, topicId, subTopicId);
-      
-          setIsAIResponding(true);
-          const response = await axios.post(`${backendBaseUrl}/aiGen/answerUserQuestion`, requestData);
-          setIsAIResponding(false);
-      
-          console.log('AI response:', response.data);
-      
-          const aiMessage = {
-            id: messages.length + 2,
-            text: formatAIResponse(response.data.data),
-            sender: 'ai'
-          };
-          setMessages(prev => [...prev, aiMessage]);
-      
-          await saveConversation('system', response.data.data, currentOutline.courseId, topicId, subTopicId);
-        } catch (error) {
-          console.error('Error in conversation:', error);
-          setIsAIResponding(false);
+    const handleSendMessage = async (text, withImage = false) => {
+      console.log('handleSendMessage called with text:', text);
+      const currentOutline = outline;
+      console.log('Current outline:', currentOutline);
+    
+      const newMessage = {
+        id: messages.length + 1,
+        text: text,
+        sender: 'user',
+      };
+      setMessages(prevMessages => [...prevMessages, newMessage]);
+    
+      try {
+        if (!currentOutline || !currentOutline.courseOutline) {
+          console.error('Course outline is not properly loaded', currentOutline);
+          return;
         }
+    
+        let topicId, subTopicId;
+        const match = text.match(/"([^:]+): ([^"]+)"/);
+        if (match) {
+          const [, topic, subtopic] = match;
+          topicId = Object.keys(currentOutline.courseOutline).find(key => currentOutline.courseOutline[key].topic.trim() === topic.trim());
+          subTopicId = currentOutline.courseOutline[topicId].details.findIndex(detail => Object.values(detail)[0].trim() === subtopic.trim());
+          subTopicId = `${topicId}.${subTopicId + 1}`;
+        } else {
+          topicId = Object.keys(currentOutline.courseOutline)[0];
+          subTopicId = 'A.1';
+        }
+    
+        console.log('Resolved topicId:', topicId, 'subTopicId:', subTopicId);
+    
+        const requestData = {
+          WalletAddress: walletAddress,
+          CourseId: currentOutline.courseId,
+          TopicId: topicId,
+          SubTopicId: subTopicId,
+          Message: text
+        };
+    
+        console.log('Sending request to AI:', requestData);
+    
+        await saveConversation('user', text, currentOutline.courseId, topicId, subTopicId);
+    
+        setIsAIResponding(true);
+        const response = await axios.post(`${backendBaseUrl}/aiGen/answerUserQuestion`, requestData);
+    
+        let imageData = null;
+        if (withImage) {
+          try {
+            const imageResponse = await axios.post(`${backendBaseUrl}/aiGen/genEducateImage`, requestData);
+            imageData = imageResponse.data.data.images[0];
+            console.log('AI image response:', imageData);
+          } catch (imageError) {
+            console.error('Error generating image:', imageError);
+          }
+        }
+    
+        setIsAIResponding(false);
+    
+        console.log('AI response:', response.data);
+    
+        const aiMessage = {
+          id: messages.length + 2,
+          text: formatAIResponse(response.data.data),
+          sender: 'ai',
+          image: imageData
+        };
+        setMessages(prev => [...prev, aiMessage]);
+    
+        await saveConversation('system', response.data.data, currentOutline.courseId, topicId, subTopicId);
+      } catch (error) {
+        console.error('Error in conversation:', error);
+        setIsAIResponding(false);
+      }
     };
 
 
@@ -383,15 +418,36 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, walletAddress
         setQuizOpen(false);
       };
     
-    //handle quiz results
-    const filteredOutline = Object.entries(outline?.courseOutline || {}).filter(([topicKey, topicValue]) => 
-        topicKey.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        topicValue.topic.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (topicValue.details && topicValue.details.some(subtopic => 
-            Object.keys(subtopic)[0].toLowerCase().includes(searchTerm.toLowerCase()) ||
-            Object.values(subtopic)[0].toLowerCase().includes(searchTerm.toLowerCase())
-        ))
-    );
+    //handle search function in course outline
+    const filteredOutline = Object.entries(outline?.courseOutline || {}).filter(([topicKey, topicValue]) => {
+      const topicMatches = topicValue.topic.toLowerCase().includes(searchTerm.toLowerCase());
+      const subtopicMatches = topicValue.details.some(subtopic => {
+        const subtopicKey = Object.keys(subtopic)[0];
+        const subtopicContent = subtopic[subtopicKey];
+        return subtopicKey.toLowerCase().includes(searchTerm.toLowerCase()) ||
+               subtopicContent.toLowerCase().includes(searchTerm.toLowerCase());
+      });
+      return topicMatches || subtopicMatches;
+    }).map(([topicKey, topicValue]) => {
+      if (searchTerm === '' || topicValue.topic.toLowerCase().includes(searchTerm.toLowerCase())) {
+        // If search term is empty or the topic matches, return all subtopics
+        return [topicKey, topicValue];
+      } else {
+        // If topic doesn't match, filter subtopics
+        return [
+          topicKey,
+          {
+            ...topicValue,
+            details: topicValue.details.filter(subtopic => {
+              const subtopicKey = Object.keys(subtopic)[0];
+              const subtopicContent = subtopic[subtopicKey];
+              return subtopicKey.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                     subtopicContent.toLowerCase().includes(searchTerm.toLowerCase());
+            })
+          }
+        ];
+      }
+    });
 
     const renderQuizDialog = () => {
         if (!quizData) return null;
@@ -534,135 +590,139 @@ function SuggestedCourse({ courseTitle, initialCourseOutline = {}, walletAddress
               ) : null}
           </Box>
           {started && (
-              <Box width={400} bgcolor="#1a2f26" color="#ffffff" p={2} overflow="auto">
-                  <TextField 
-                      fullWidth 
-                      variant="outlined" 
-                      placeholder="Search topics..." 
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      sx={{ 
-                          mb: 2,
-                          '& .MuiOutlinedInput-root': {
-                          '& fieldset': {
-                              borderColor: '#ffffff',
-                          },
-                          '&:hover fieldset': {
-                              borderColor: '#ffffff',
-                          },
-                          '&.Mui-focused fieldset': {
-                              borderColor: '#ffffff',
-                          },
-                          },
-                          '& .MuiInputBase-input': {
-                          color: '#ffffff',
-                          },
-                          '& .MuiInputLabel-root': {
-                          color: '#ffffff',
-                          },
-                      }}
-                  />
-                  <LinearProgress variant="determinate" value={progress} sx={{ mb: 2 }} />
-                  <Typography variant="subtitle1" gutterBottom color="#EBE3D5" fontSize={"28px"} >Course Outline</Typography>
-                  <hr/>
-                  <List>
-                      {filteredOutline && filteredOutline.length > 0 ? (
-                          filteredOutline.map(([topicKey, topicValue]) => (
-                              <React.Fragment key={topicKey}>
-                                  <ListItem>
-                                      <ListItemText primary={topicValue.topic} />
-                                  </ListItem>
-                                  <List component="div" disablePadding>
-                                      {topicValue.details && topicValue.details.map((subtopic, index) => {
-                                          const subtopicKey = Object.keys(subtopic)[0];
-                                          const subtopicContent = subtopic[subtopicKey];
-                                          return (
-                                              <ListItem key={subtopicKey} sx={{ pl: 4 }}>
-                                                  <ListItemIcon>
-                                                  <Checkbox
-                                                    edge="start"
-                                                    checked={subtopic.isCompleted || false}
-                                                    onChange={() => handleCheckboxChange(topicKey, subtopicKey)}
-                                                    sx={{
-                                                      color: '#ffffff',
-                                                      '&.Mui-checked': {
-                                                        color: '#ffffff',
-                                                      }
-                                                    }}
-                                                  />
-                                                  </ListItemIcon>
-                                                  <ListItemText 
-                                                      primary={subtopicKey} 
-                                                      secondary={subtopicContent}
-                                                      onClick={() => handleSubtitleClick(topicKey, subtopicKey)}
-                                                      sx={{ 
-                                                          cursor: 'pointer',
-                                                          '& .MuiListItemText-primary': {
-                                                          color: '#ffffff',
-                                                          },
-                                                          '& .MuiListItemText-secondary': {
-                                                          color: '#ffffff',
-                                                          },
-                                                      }}
-                                                  />
-                                                  <Button 
-                                                      onClick={() => handleQuizClick(topicKey, subtopicKey)}
-                                                      sx={{
-                                                          backgroundColor: '#6B8A7A',
-                                                          color: '#ffffff',
-                                                          '&:hover': {
-                                                          backgroundColor: '#5A7A6A',
-                                                          },
-                                                      }}
-                                                  >
-                                                      Quiz
-                                                  </Button>
-                                              </ListItem>
-                                          );
-                                      })}
-                                  </List>
-                              </React.Fragment>
-                          ))
-                      ) : (
-                          <ListItem>
-                              <ListItemText 
-                                  primary="No course outline available or no matches found." 
-                                  sx={{ 
+            <Box width={400} bgcolor="#1a2f26" color="#ffffff" display="flex" flexDirection="column" height="100%">
+              <Box p={2}>
+                <TextField 
+                  fullWidth 
+                  variant="outlined" 
+                  placeholder="Search topics..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  sx={{ 
+                    mb: 2,
+                    '& .MuiOutlinedInput-root': {
+                      '& fieldset': {
+                        borderColor: '#ffffff',
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#ffffff',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: '#ffffff',
+                      },
+                    },
+                    '& .MuiInputBase-input': {
+                      color: '#ffffff',
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: '#ffffff',
+                    },
+                  }}
+                />
+                <LinearProgress variant="determinate" value={progress} sx={{ mb: 2 }} />
+                <Typography variant="subtitle1" gutterBottom color="#EBE3D5" fontSize={"28px"} >Course Outline</Typography>
+                <hr/>
+              </Box>
+              <ScrollableOutline>
+                <List>
+                  {filteredOutline && filteredOutline.length > 0 ? (
+                    filteredOutline.map(([topicKey, topicValue]) => (
+                      <React.Fragment key={topicKey}>
+                        <ListItem>
+                          <ListItemText primary={topicValue.topic} />
+                        </ListItem>
+                        <List component="div" disablePadding>
+                          {topicValue.details && topicValue.details.map((subtopic, index) => {
+                            const subtopicKey = Object.keys(subtopic)[0];
+                            const subtopicContent = subtopic[subtopicKey];
+                            return (
+                              <ListItem key={subtopicKey} sx={{ pl: 4 }}>
+                                <ListItemIcon>
+                                  <Checkbox
+                                    edge="start"
+                                    checked={subtopic.isCompleted || false}
+                                    onChange={() => handleCheckboxChange(topicKey, subtopicKey)}
+                                    sx={{
                                       color: '#ffffff',
+                                      '&.Mui-checked': {
+                                        color: '#ffffff',
+                                      }
+                                    }}
+                                  />
+                                </ListItemIcon>
+                                <ListItemText 
+                                  primary={subtopicKey} 
+                                  secondary={subtopicContent}
+                                  onClick={() => handleSubtitleClick(topicKey, subtopicKey)}
+                                  sx={{ 
+                                    cursor: 'pointer',
+                                    '& .MuiListItemText-primary': {
+                                      color: '#ffffff',
+                                    },
+                                    '& .MuiListItemText-secondary': {
+                                      color: '#ffffff',
+                                    },
                                   }}
-                              />
-                          </ListItem>
-                      )}
-                  </List>
-                </Box>
-              )}
-            <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-                <DialogTitle>Start this subtopic?</DialogTitle>
-                <DialogContent>
-                    <Typography>
-                        Are you going to learn "{selectedSubtopic.topic}: {selectedSubtopic.subtopic}" now?
-                    </Typography>
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setOpenDialog(false)}>No</Button>
-                    <Button onClick={handleDialogConfirm}>Yes</Button>
-                </DialogActions>
-            </Dialog>
-            <StyledDialog open={isQuizGenerating}>
-                <StyledDialogContent>
-                    <StyledCircularProgress size={20} />
-                    <Typography ml={2}>Generating quiz...</Typography>
-                </StyledDialogContent>
-            </StyledDialog>
-            <StyledDialog open={isCalculatingResults}>
-                <StyledDialogContent>
-                    <StyledCircularProgress size={20} />
-                    <Typography ml={2}>Calculating results...</Typography>
-                </StyledDialogContent>
-            </StyledDialog>
-            {renderQuizDialog()}
-            {renderQuizResults()}
-        </Box>
+                                />
+                                <Button 
+                                  onClick={() => handleQuizClick(topicKey, subtopicKey)}
+                                  sx={{
+                                    backgroundColor: '#6B8A7A',
+                                    color: '#ffffff',
+                                    '&:hover': {
+                                      backgroundColor: '#5A7A6A',
+                                    },
+                                  }}
+                                >
+                                  Quiz
+                                </Button>
+                              </ListItem>
+                            );
+                          })}
+                        </List>
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    <ListItem>
+                      <ListItemText 
+                        primary="No course outline available or no matches found." 
+                        sx={{ 
+                          color: '#ffffff',
+                        }}
+                      />
+                    </ListItem>
+                  )}
+                </List>
+              </ScrollableOutline>
+            </Box>
+          )}
+          <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+              <DialogTitle>Start this subtopic?</DialogTitle>
+              <DialogContent>
+                  <Typography>
+                      Are you going to learn "{selectedSubtopic.topic}: {selectedSubtopic.subtopic}" now?
+                  </Typography>
+              </DialogContent>
+              <DialogActions>
+                  <Button onClick={() => setOpenDialog(false)}>No</Button>
+                  <Button onClick={handleDialogConfirm}>Yes</Button>
+              </DialogActions>
+          </Dialog>
+          <StyledDialog open={isQuizGenerating}>
+              <StyledDialogContent>
+                  <StyledCircularProgress size={20} />
+                  <Typography ml={2}>Generating quiz...</Typography>
+              </StyledDialogContent>
+          </StyledDialog>
+          <StyledDialog open={isCalculatingResults}>
+              <StyledDialogContent>
+                  <StyledCircularProgress size={20} />
+                  <Typography ml={2}>Calculating results...</Typography>
+              </StyledDialogContent>
+          </StyledDialog>
+          {renderQuizDialog()}
+          {renderQuizResults()}
+      </Box>
     );
     
 }
