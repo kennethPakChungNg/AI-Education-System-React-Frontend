@@ -7,7 +7,7 @@ import axios from 'axios';
 import ChatWindow from './ChatWindow';
 import MessageInput from './MessageInput';
 import { backendBaseUrl } from '../serverConfig';
-import { styled } from '@mui/material/styles';
+
 
 const ScrollableOutline = styled(Box)(({ theme }) => ({
   flexGrow: 1,

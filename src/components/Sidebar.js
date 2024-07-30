@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+${backendBaseUrl}
+
+import React, { useState, useEffect, useCallback, forwardRef, useImperativeHandle, useMemo } from 'react';
 import { Sidebar, Menu, MenuItem, SubMenu } from 'react-pro-sidebar';
 import { useAccount, useDisconnect } from 'wagmi';
 import { Button, Box } from '@mui/material';
@@ -11,13 +13,13 @@ import aiIcon from '../assets/images/Full-Logo.png';
 import PersonIcon from '@mui/icons-material/Person';
 import suggestedCourseIcon from '../assets/icons/course.png'; 
 import NewCourseWindow from './NewCourseWindow';
-import { backendBaseUrl } from '../serverConfig';
 
 const SidebarComponent = forwardRef(({ onHomeClick, onNewCourseClick, onSuggestedCourseClick, onUserProfileClick, activeComponent, onCourseHistoryClick, onCourseRename }, ref) => {
   const [courseHistory, setCourseHistory] = useState([]);
   const { address, isConnected } = useAccount();
   const [renamingCourse, setRenamingCourse] = useState(null);
   const [newCourseName, setNewCourseName] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const { disconnect } = useDisconnect();
 
   const fetchCourseHistory = useCallback(async () => {
@@ -60,6 +62,12 @@ const SidebarComponent = forwardRef(({ onHomeClick, onNewCourseClick, onSuggeste
       setCourseHistory(prevHistory => [...prevHistory, newCourse]);
     }
   }));
+
+  const filteredCourseHistory = useMemo(() => {
+    return courseHistory.filter(course => 
+      course.courseName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [courseHistory, searchTerm]);
 
   return (
     <Sidebar
@@ -105,7 +113,13 @@ const SidebarComponent = forwardRef(({ onHomeClick, onNewCourseClick, onSuggeste
                 </MenuItem>
                 <hr/>
                 <MenuItem className="search-menu-item">
-                  <input type="text" placeholder="Search or ⌘ /..." className="search-input" />
+                  <input 
+                    type="text" 
+                    placeholder="Search course history with keyword..." 
+                    className="search-input" 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
                 </MenuItem>
                 <SubMenu 
                   label="Course History"
@@ -130,7 +144,7 @@ const SidebarComponent = forwardRef(({ onHomeClick, onNewCourseClick, onSuggeste
                       },
                     }}
                   >
-                    {courseHistory.map((course, index) => (
+                    {filteredCourseHistory.map((course, index) => (
                       <MenuItem 
                         key={index} 
                         className="course-history-item"
@@ -186,7 +200,7 @@ const SidebarComponent = forwardRef(({ onHomeClick, onNewCourseClick, onSuggeste
         <Box sx={{ 
           padding: '10px', 
           backgroundColor: '#435334',
-          marginTop: 'auto' // This pushes the user section to the bottom
+          marginTop: 'auto'
         }}>
           {isConnected ? (
             <>
