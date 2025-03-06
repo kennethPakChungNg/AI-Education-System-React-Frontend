@@ -113,7 +113,7 @@ Connect with MetaMask or other Web3 wallets to access personalized learning expe
 ## 🤝 Contributors
 
 - [kennethPakChungNg](https://github.com/kennethPakChungNg) - Full Stack Developer
-- [web3hugo1225](https://github.com/web3hugo1225) - Frontend Development
+- [web3hugo1225](https://github.com/web3hugo1225) - Full Stack Developer
 
 ## 🏗️ Future Development
 
